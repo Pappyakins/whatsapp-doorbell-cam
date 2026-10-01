@@ -1,0 +1,71 @@
+# WhatsApp Doorbell Cam
+
+A standalone PIR + camera doorbell that snaps a photo of your visitor and delivers it straight to your WhatsApp.
+
+**How it works:** An HC-SR501 PIR watches the doorway on microamps → motion wakes the ESP32-CAM from deep sleep → it snaps a photo → POSTs the JPEG to a small webhook on your home server → the server forwards it to your WhatsApp as a photo message captioned "🔔 Someone's at the door! (Front door, \<time\>)".
+
+No cloud accounts, no subscriptions, no apps phoning home. Your server, your WhatsApp.
+
+> **Status:** build guide complete. Firmware and server photo endpoint are in progress.
+
+## Parts
+
+| Part | Notes |
+|---|---|
+| AI-Thinker ESP32-CAM module | OV2640 camera, onboard flash LED. ~C$12–18 on AliExpress |
+| FTDI USB-to-TTL programmer (3.3V) | **Required** — the ESP32-CAM has no USB port; you cannot flash it without this |
+| HC-SR501 PIR motion sensor | The 5-pack variety — you'll have spares |
+| 5V USB power adapter | Simplest power option |
+| — or — 18650 cell + TP4056 charger (with protection) + 5V boost module | For a truly wireless install |
+| 470µF electrolytic capacitor | Across 5V/GND near the board — kills the brownout resets these boards are famous for |
+| Jumper wires | |
+| 3D-printed enclosure | See Enclosure |
+
+## Power
+
+- Taking a photo + WiFi POST: ~250–300mA for ~10–15 seconds, roughly 1mAh per visitor.
+- Deep sleep on a stock board: ~5mA idle (the onboard AMS1117 regulator's quiescent current dominates, not the chip) → about 3–4 weeks on a 3000mAh 18650.
+- Same cell with the regulator-bypass mod (feed 3.3V direct, remove the AMS1117): ~0.1mA idle → several months.
+- **Recommendation:** USB 5V wall wart if there's an outlet near the door. Zero power anxiety, no charging, no mods. Battery only if the spot truly has no outlet.
+
+## Wiring
+
+- 5V supply → ESP32-CAM `5V` pin, GND → `GND`. 470µF cap across 5V/GND close to the board.
+- PIR: `VCC` → 5V, `GND` → GND, `OUT` → **GPIO 13** (RTC-capable, so the ESP32 wakes from deep sleep directly on it — no transistor hack needed).
+- Flashing only: FTDI `TX` → `U0R`, `RX` → `U0T`, `GND` → `GND`, `GPIO 0` → `GND` while flashing, then press `RST`. Release GPIO 0 after the flash.
+
+## Server
+
+New endpoint on the home server (same box that runs the text-alert webhook):
+
+- `POST /api/doorbell-photo` — multipart form with the JPEG (`photo`) plus the shared `token`.
+- The server saves the photo and sends it to WhatsApp via the Evolution API `sendMedia` call, captioned "🔔 Someone's at the door! (Front door, \<time\>)".
+- The same 3-minute cooldown as the text alerts applies, so a lingering visitor doesn't spam you.
+
+## Firmware (in progress)
+
+1. PIR goes high → ESP32 wakes from deep sleep (ext1 wake on GPIO 13).
+2. Camera init, snap at SVGA (800x600 — good detail, small enough to POST fast).
+3. Optional: flash LED on GPIO 4 fires for night captures.
+4. WiFi connect (10s timeout) → POST photo → wait for PIR line to drop → back to deep sleep.
+
+## Enclosure
+
+- 3D-printable case with a window for the PIR Fresnel dome (**must stay exposed**), a window for the camera lens, and an optional flash-LED window if you use it as a night illuminator.
+- Mount ~1.5m beside the door, aimed down the walkway, away from direct sun and HVAC vents.
+- Keep the ESP antenna area clear of metal.
+
+## Build order
+
+1. Order the ESP32-CAM + FTDI programmer (a few weeks on AliExpress).
+2. Firmware + server photo endpoint.
+3. Flash and bench-test on the desk.
+4. Print the case.
+5. Mount by the door.
+
+## Security
+
+Never commit WiFi credentials or the API token to this repo. Keep them in a local secrets file on the device and the server only.
+
+---
+Powered by @jakinsCraft
