@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
-"""Generate STL files for the WhatsApp Doorbell Cam enclosure.
+"""Generate STL files for the WhatsApp Doorbell Cam enclosure — pebble style.
 
 Design (all mm):
-  - Body: 96 x 70 x 34.5 outer, 2.5 wall. Front panel carries a 26x26 window
-    for the HC-SR501 Fresnel dome and a 16x26 slot for the ESP32-CAM lens
-    (+ flash LED tolerance). USB cable slot in the bottom wall.
-  - 4x corner bosses take M3 self-tapping screws (2.8mm pilot).
-  - Lid: 96 x 70 x 3.5 with M3 clearance holes (counterbored flush on the
-    back face) and 2x 5mm square holes to screw the lid to the wall first.
+  - Rounded-rectangle "pebble" body, 96 x 70 x 34.5, 2.5 wall, smooth
+    extruded silhouette (no faceted edges).
+  - Front face with two raised circular bezels (smooth bores):
+      * PIR bezel: 26 mm bore for the HC-SR501 Fresnel dome (23 mm)
+      * Camera bezel: 20 mm bore covering the ESP32-CAM lens + flash LED
+  - USB cable notch in the bottom wall.
+  - 4x corner bosses take M3 self-tapping screws (2.8 mm pilot).
+  - Lid: matching rounded back plate, 3 mm, with M3 clearance holes and
+    2x 5 mm wall-mount holes (single piece — no split layers).
 
-Print: body FRONT-FACE-DOWN (windows on the build plate), lid flat.
-No supports needed. PETG recommended for porch/sun use.
+Print: body FRONT-FACE-DOWN, lid flat. No supports. PETG recommended.
+Only the Python standard library is used.
 
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
-Only the Python standard library is used.
 """
 import struct
 import math
@@ -29,25 +31,99 @@ def tri(a, b, c):
 
 
 def box(x0, y0, z0, x1, y1, z1):
-    """Axis-aligned box with outward-facing triangles."""
-    # bottom (-z)
     tri((x0, y0, z0), (x1, y1, z0), (x1, y0, z0))
     tri((x0, y0, z0), (x0, y1, z0), (x1, y1, z0))
-    # top (+z)
     tri((x0, y0, z1), (x1, y0, z1), (x1, y1, z1))
     tri((x0, y0, z1), (x1, y1, z1), (x0, y1, z1))
-    # front (+y)
     tri((x0, y1, z0), (x1, y1, z1), (x1, y1, z0))
     tri((x0, y1, z0), (x0, y1, z1), (x1, y1, z1))
-    # back (-y)
     tri((x0, y0, z0), (x1, y0, z0), (x1, y0, z1))
     tri((x0, y0, z0), (x1, y0, z1), (x0, y0, z1))
-    # right (+x)
     tri((x1, y0, z0), (x1, y1, z0), (x1, y1, z1))
     tri((x1, y0, z0), (x1, y1, z1), (x1, y0, z1))
-    # left (-x)
     tri((x0, y0, z0), (x0, y1, z1), (x0, y1, z0))
     tri((x0, y0, z0), (x0, y0, z1), (x0, y1, z1))
+
+
+# ------------------------------------------------------------- 2D loops ---
+def _loop_elements(cx, cy, w, h, r):
+    x0, x1 = cx - w / 2, cx + w / 2
+    y0, y1 = cy - h / 2, cy + h / 2
+    return [
+        ('line', (x1, y0 + r), (x1, y1 - r)),
+        ('arc', (x1 - r, y1 - r), 0.0, math.pi / 2, r),
+        ('line', (x1 - r, y1), (x0 + r, y1)),
+        ('arc', (x0 + r, y1 - r), math.pi / 2, math.pi, r),
+        ('line', (x0, y1 - r), (x0, y0 + r)),
+        ('arc', (x0 + r, y0 + r), math.pi, 3 * math.pi / 2, r),
+        ('line', (x0 + r, y0), (x1 - r, y0)),
+        ('arc', (x1 - r, y0 + r), 3 * math.pi / 2, 2 * math.pi, r),
+    ]
+
+
+def _element_point(el, t):
+    kind = el[0]
+    if kind == 'line':
+        (ax, ay), (bx, by) = el[1], el[2]
+        return (ax + (bx - ax) * t, ay + (by - ay) * t)
+    (_, (ccx, ccy), a0, a1, rr) = el
+    a = a0 + (a1 - a0) * t
+    return (ccx + rr * math.cos(a), ccy + rr * math.sin(a))
+
+
+def _element_len(el):
+    if el[0] == 'line':
+        (ax, ay), (bx, by) = el[1], el[2]
+        return math.hypot(bx - ax, by - ay)
+    return (el[3] - el[2]) * el[4]
+
+
+def rounded_rect_loop(cx, cy, w, h, r, z, n=96, skip_elements=()):
+    """CCW rounded-rectangle loop, evenly sampled. skip_elements: indices of
+    elements to leave out (returns open polyline pieces)."""
+    els = _loop_elements(cx, cy, w, h, r)
+    lens = [_element_len(e) for e in els]
+    pieces, cur = [], []
+    for ei, el in enumerate(els):
+        if ei in skip_elements:
+            if cur:
+                pieces.append(cur)
+                cur = []
+            continue
+        # sample this element with count proportional to its length
+        total = sum(lens[e] for e in range(len(els)) if e not in skip_elements)
+        m = max(2, int(round(n * lens[ei] / sum(lens))))
+        for k in range(m):
+            x, y = _element_point(el, k / m)
+            cur.append((x, y, z))
+    if cur:
+        pieces.append(cur)
+    return pieces
+
+
+def strip_open(p0, p1, flip=False):
+    """Connect two same-length open polylines with quads (no wraparound)."""
+    n = min(len(p0), len(p1))
+    for i in range(n - 1):
+        j = i + 1
+        if not flip:
+            tri(p0[i], p0[j], p1[j])
+            tri(p0[i], p1[j], p1[i])
+        else:
+            tri(p0[i], p1[j], p0[j])
+            tri(p0[i], p1[i], p1[j])
+
+
+def strip_closed(p0, p1, flip=False):
+    n = min(len(p0), len(p1))
+    for i in range(n):
+        j = (i + 1) % n
+        if not flip:
+            tri(p0[i], p0[j], p1[j])
+            tri(p0[i], p1[j], p1[i])
+        else:
+            tri(p0[i], p1[j], p0[j])
+            tri(p0[i], p1[i], p1[j])
 
 
 def _ring(cx, cy, r, z, n):
@@ -55,41 +131,52 @@ def _ring(cx, cy, r, z, n):
              cy + r * math.sin(2 * math.pi * i / n), z) for i in range(n)]
 
 
-def screw_boss(cx, cy, r_out, r_in, z0, z1, n=32):
-    """Hollow cylindrical boss, open at the bottom (sits on a panel)."""
-    outer0, outer1 = _ring(cx, cy, r_out, z0, n), _ring(cx, cy, r_out, z1, n)
-    inner0, inner1 = _ring(cx, cy, r_in, z0, n), _ring(cx, cy, r_in, z1, n)
-    for i in range(n):
-        j = (i + 1) % n
-        # outer wall (normal points outward)
-        tri(outer0[i], outer0[j], outer1[j])
-        tri(outer0[i], outer1[j], outer1[i])
-        # inner hole wall (normal points toward the axis)
-        tri(inner0[i], inner1[j], inner0[j])
-        tri(inner0[i], inner1[i], inner1[j])
-        # top annulus (normal +z)
-        tri(outer1[i], outer1[j], inner1[j])
-        tri(outer1[i], inner1[j], inner1[i])
+def tube(cx, cy, r_out, r_in, z0, z1, n=48):
+    """Hollow vertical cylinder (bezel / boss), open at the bottom."""
+    o0, o1 = _ring(cx, cy, r_out, z0, n), _ring(cx, cy, r_out, z1, n)
+    i0, i1 = _ring(cx, cy, r_in, z0, n), _ring(cx, cy, r_in, z1, n)
+    for k in range(n):
+        j = (k + 1) % n
+        tri(o0[k], o0[j], o1[j])      # outer wall
+        tri(o0[k], o1[j], o1[k])
+        tri(i0[k], i1[j], i0[j])      # inner bore (faces the axis)
+        tri(i0[k], i1[k], i1[j])
+        tri(o1[k], o1[j], i1[j])      # top annulus
+        tri(o1[k], i1[j], i1[k])
 
 
-def slab_boxes(x0, x1, y0, y1, z0, z1, holes):
-    """Fill a thin XY slab with boxes, skipping rectangular holes.
+def screw_boss(cx, cy, z0, z1):
+    tube(cx, cy, 3.5, 1.4, z0, z1, n=32)
 
-    holes: list of (hx0, hx1, hy0, hy1)."""
-    ys = sorted(set([y0, y1] + [h[2] for h in holes] + [h[3] for h in holes]))
-    for ya, yb in zip(ys, ys[1:]):
-        ya, yb = max(ya, y0), min(yb, y1)
-        if yb <= ya:
-            continue
-        ohs = [h for h in holes if h[2] < yb and h[3] > ya]
-        xs = sorted(set([x0, x1] + [h[0] for h in ohs] + [h[1] for h in ohs]))
-        for xa, xb in zip(xs, xs[1:]):
-            xa, xb = max(xa, x0), min(xb, x1)
-            if xb <= xa:
+
+def in_rounded_rect(x, y, cx, cy, w, h, r):
+    dx = abs(x - cx) - (w / 2 - r)
+    dy = abs(y - cy) - (h / 2 - r)
+    if dx <= 0 and dy <= 0:
+        return True
+    if dx <= 0:
+        return dy <= r
+    if dy <= 0:
+        return dx <= r
+    return dx * dx + dy * dy <= r * r
+
+
+def voxel_plate(cx, cy, w, h, r, z0, z1, holes, voxel=1.0):
+    """Flat plate with circular holes, built from 1 mm voxels.
+
+    holes: list of (hx, hy, hr) — keep-out circles."""
+    nx, ny = int(w / voxel), int(h / voxel)
+    for ix in range(nx):
+        for iy in range(ny):
+            x = cx - w / 2 + (ix + 0.5) * voxel
+            y = cy - h / 2 + (iy + 0.5) * voxel
+            if not in_rounded_rect(x, y, cx, cy, w, h, r):
                 continue
-            if any(h[0] <= xa and h[1] >= xb for h in ohs):
-                continue  # inside a hole
-            box(xa, ya, z0, xb, yb, z1)
+            if any((x - hx) ** 2 + (y - hy) ** 2 < hr ** 2
+                   for hx, hy, hr in holes):
+                continue
+            box(x - voxel / 2, y - voxel / 2, z0,
+                x + voxel / 2, y + voxel / 2, z1)
 
 
 def write_stl(path):
@@ -99,54 +186,80 @@ def write_stl(path):
         for a, b, c in tris:
             ux, uy, uz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
             vx, vy, vz = c[0] - a[0], c[1] - a[1], c[2] - a[2]
-            nx = uy * vz - uz * vy
-            ny = uz * vx - ux * vz
-            nz = ux * vy - uy * vx
-            f.write(struct.pack("<12f", nx, ny, nz,
-                                a[0], a[1], a[2],
-                                b[0], b[1], b[2],
+            f.write(struct.pack("<12f",
+                                uy * vz - uz * vy, uz * vx - ux * vz,
+                                ux * vy - uy * vx,
+                                a[0], a[1], a[2], b[0], b[1], b[2],
                                 c[0], c[1], c[2]))
             f.write(struct.pack("<H", 0))
     print("wrote", path, len(tris), "triangles")
 
 
-# ---------------------------------------------------------------- body ---
-W, H, T, D = 96.0, 70.0, 2.5, 34.5   # outer W/H, wall, body depth
+# ================================================================= body ==
+CX, CY = 48.0, 35.0
+W, H, R = 96.0, 70.0, 12.0          # outer silhouette
+WI, HI, RI = 91.0, 65.0, 9.5        # inner (2.5 wall)
+T, D = 2.5, 34.5                     # front plate thickness, body depth
+PIR = (24.0, 38.0)                   # PIR bezel centre
+CAM = (68.0, 38.0)                   # camera bezel centre
 
-# Front panel (z 0..T) with PIR dome window and camera slot.
-slab_boxes(0, W, 0, H, 0, T, [
-    (11, 37, 25, 51),   # PIR dome window 26x26, centre (24,38)
-    (60, 76, 25, 51),   # camera slot 16x26, centre (68,38)
+# -- shell walls, full height, except the bottom straight (boxes handle it)
+# element 6 is the bottom straight; build the rest as open strips.
+for z0, z1 in [(0, D)]:
+    po = rounded_rect_loop(CX, CY, W, H, R, z0, skip_elements=(6,))
+    po1 = rounded_rect_loop(CX, CY, W, H, R, z1, skip_elements=(6,))
+    pi = rounded_rect_loop(CX, CY, WI, HI, RI, z0, skip_elements=(6,))
+    pi1 = rounded_rect_loop(CX, CY, WI, HI, RI, z1, skip_elements=(6,))
+    for a0, a1, b0, b1 in zip(po, po1, pi, pi1):
+        strip_open(a0, a1)              # outer wall
+    for a0, a1, b0, b1 in zip(pi, pi1, po, po1):
+        strip_open(a0, a1, flip=True)   # inner wall
+    for a0, a1, b0, b1 in zip(po, po1, pi, pi1):
+        # top rim annulus at z1
+        n = min(len(a1), len(b1))
+        for k in range(n - 1):
+            j = k + 1
+            tri(a1[k], a1[j], b1[j])
+            tri(a1[k], b1[j], b1[k])
+
+# -- bottom straight wall as solid boxes, with the USB cable notch
+# (notch: x 41..55, z 2.5..8, through the 2.5 wall)
+box(12, 0, 0, 41, T, D)
+box(55, 0, 0, 84, T, D)
+box(41, 0, 0, 55, T, T)      # below the notch
+box(41, 0, 8, 55, T, D)      # above the notch
+
+# -- front face: inset voxel plate (stepped edge buried in the walls)
+voxel_plate(CX, CY, 93, 67, 10.5, 0, T, [
+    (PIR[0], PIR[1], 16.7),   # clearance around PIR bezel tube
+    (CAM[0], CAM[1], 13.7),   # clearance around camera bezel tube
 ])
 
-# Side / top walls.
-box(0, 0, 0, T, H, D)          # left
-box(W - T, 0, 0, W, H, D)      # right
-box(T, H - T, 0, W - T, H, D)  # top
-# Bottom wall with USB cable slot (x 42..54, open at the build-plate edge).
-box(T, 0, 0, 42, T, D)
-box(54, 0, 0, W - T, T, D)
-box(42, 0, 8, 54, T, D)
+# -- raised circular bezels (smooth bores, 2.5 proud of the face)
+tube(PIR[0], PIR[1], 17.0, 13.0, 0, 5.0)    # PIR: 26 mm bore
+tube(CAM[0], CAM[1], 14.0, 10.0, 0, 5.0)    # camera: 20 mm bore
 
-# Corner screw bosses (M3 self-tap into 2.8mm pilot).
-for cx, cy in [(6, 6), (90, 6), (6, 64), (90, 64)]:
-    screw_boss(cx, cy, 3.5, 1.4, T, 34.0)
+# -- corner screw bosses
+for bx, by in [(8, 8), (88, 8), (8, 62), (88, 62)]:
+    screw_boss(bx, by, T, 34.0)
 
 write_stl(os.path.join(BASE, "doorbell-cam-body.stl"))
 
-# ---------------------------------------------------------------- lid ----
+# ================================================================= lid ===
 tris.clear()
-# Layer A (z D..D+1.5): M3 clearance 3.4mm sq. + wall-mount 5mm sq. holes.
-slab_boxes(0, W, 0, H, D, D + 1.5, [
-    (4.3, 7.7, 4.3, 7.7), (88.3, 91.7, 4.3, 7.7),
-    (4.3, 7.7, 62.3, 65.7), (88.3, 91.7, 62.3, 65.7),
-    (45.5, 50.5, 9.5, 14.5), (45.5, 50.5, 55.5, 60.5),
-])
-# Layer B (z D+1.5..D+3.5): 7mm sq. counterbores so M3 heads sit flush.
-slab_boxes(0, W, 0, H, D + 1.5, D + 3.5, [
-    (2.5, 9.5, 2.5, 9.5), (86.5, 93.5, 2.5, 9.5),
-    (2.5, 9.5, 60.5, 67.5), (86.5, 93.5, 60.5, 67.5),
-    (45.5, 50.5, 9.5, 14.5), (45.5, 50.5, 55.5, 60.5),
+LZ0, LZ1 = D, D + 3.0
+# smooth outer ring
+ro0 = rounded_rect_loop(CX, CY, W, H, R, LZ0)
+ro1 = rounded_rect_loop(CX, CY, W, H, R, LZ1)
+ri0 = rounded_rect_loop(CX, CY, WI, HI, RI, LZ0)
+ri1 = rounded_rect_loop(CX, CY, WI, HI, RI, LZ1)
+strip_closed(ro0[0], ro1[0])
+strip_closed(ri0[0], ri1[0], flip=True)
+strip_closed(ro1[0], ri1[0])   # top annulus
+# inset voxel plate with round holes (single piece)
+voxel_plate(CX, CY, 93, 67, 10.5, LZ0, LZ1, [
+    (8, 8, 1.7), (88, 8, 1.7), (8, 62, 1.7), (88, 62, 1.7),  # M3 clearance
+    (48, 12, 2.5), (48, 58, 2.5),                            # wall mount
 ])
 
 write_stl(os.path.join(BASE, "doorbell-cam-lid.stl"))
