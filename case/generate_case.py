@@ -20,8 +20,15 @@ exported in its own frame (z 0..3) so it drops flat onto the build plate.
 
 Print: body FRONT-FACE-DOWN, lid flat. No supports. PETG recommended.
 
+v3 (2026-10-06): battery edition. Adds an 18650 bay in the bottom of the
+interior: two saddle ribs cradle the cell (axis along X, centred y=14),
+end stops fit 65-68 mm cells (bare or protected flat-top), a zip-tie
+groove in the floor under the cell mid-point, and a second USB notch in
+the bottom wall for the TP4056 charger's USB port. Small boards
+(TP4056, boost) tape down beside the cradle — standard DIY practice.
+
 Run with the project venv:
-  ../.venv/bin/python generate_case_v2.py
+  ../.venv/bin/python generate_case.py
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
 """
 import os
@@ -54,6 +61,12 @@ def cyl(r, x, y, z0, depth):
     return Manifold.cylinder(depth, r, circular_segments=96).translate([x, y, z0])
 
 
+def cyl_x(r, x0, y, z, length):
+    """Cylinder with axis along X, spanning x0..x0+length, centred at (y, z)."""
+    return (Manifold.cylinder(length, r, circular_segments=96)
+            .rotate([0, 90, 0]).translate([x0, y, z]))
+
+
 def box(x, y, z, sx, sy, sz):
     return Manifold.cube([sx, sy, sz]).translate([x, y, z])
 
@@ -79,23 +92,40 @@ def write_stl(solid, path):
 
 
 # ================================================================= body ==
-body = rounded_prism(W, H, R, 0.0, D)                    # outer shell
-body -= rounded_prism(WI, HI, RI, T, D)                  # hollow interior
-body += cyl(17.0, *PIR, -T, T)                           # PIR bezel ring
-body += cyl(14.0, *CAM, -T, T)                           # camera bezel ring
-for bx, by in BOSS:                                      # screw bosses
-    body += cyl(3.5, bx, by, T, 31.5)
-body -= cyl(13.0, *PIR, -T - 1, 10.0)                    # PIR bore (26 mm)
-body -= cyl(10.0, *CAM, -T - 1, 10.0)                    # camera bore (20 mm)
-for bx, by in BOSS:                                      # M3 pilot holes (2.8)
-    body -= cyl(1.4, bx, by, T, 33.0)
-body -= box(41.0, -1.0, T, 14.0, T + 1.5, 5.5)           # USB notch, bottom wall
-write_stl(body, os.path.join(BASE, "doorbell-cam-body.stl"))
+def build_body():
+    body = rounded_prism(W, H, R, 0.0, D)                    # outer shell
+    body -= rounded_prism(WI, HI, RI, T, D)                  # hollow interior
+    body += cyl(17.0, *PIR, -T, T)                           # PIR bezel ring
+    body += cyl(14.0, *CAM, -T, T)                           # camera bezel ring
+    for bx, by in BOSS:                                      # screw bosses
+        body += cyl(3.5, bx, by, T, 31.5)
+    body -= cyl(13.0, *PIR, -T - 1, 10.0)                    # PIR bore (26 mm)
+    body -= cyl(10.0, *CAM, -T - 1, 10.0)                    # camera bore (20 mm)
+    for bx, by in BOSS:                                      # M3 pilot holes (2.8)
+        body -= cyl(1.4, bx, by, T, 33.0)
+    body -= box(41.0, -1.0, T, 14.0, T + 1.5, 5.5)           # USB notch, bottom wall
+    body -= box(66.0, -1.0, T, 12.0, T + 1.5, 5.5)           # charger USB notch
+    body -= box(45.5, 4.0, 0.0, 5.0, 20.0, 2.0)              # zip-tie groove, floor
+    # --- 18650 battery bay (cell axis along X at y=14, z-centre 12, r9) ---
+    for sx in (24.0, 56.0):                                 # saddle ribs
+        saddle = box(sx, 4.0, T, 6.0, 20.0, 18.5)
+        saddle -= cyl_x(9.5, sx - 2.0, 14.0, 12.0, 10.0)     # cradle cutout
+        body += saddle
+    body += box(12.0, 6.0, T, 2.0, 16.0, 15.5)               # end stop, -X
+    body += box(82.0, 6.0, T, 2.0, 16.0, 15.5)               # end stop, +X
+    return body
+
 
 # ================================================================== lid ==
-lid = rounded_prism(W, H, R, 0.0, 3.0)
-for bx, by in BOSS:                                      # M3 clearance (3.4)
-    lid -= cyl(1.7, bx, by, -1.0, 5.0)
-for mx, my in MOUNT:                                     # wall mount (5 mm)
-    lid -= cyl(2.5, mx, my, -1.0, 5.0)
-write_stl(lid, os.path.join(BASE, "doorbell-cam-lid.stl"))
+def build_lid():
+    lid = rounded_prism(W, H, R, 0.0, 3.0)
+    for bx, by in BOSS:                                      # M3 clearance (3.4)
+        lid -= cyl(1.7, bx, by, -1.0, 5.0)
+    for mx, my in MOUNT:                                     # wall mount (5 mm)
+        lid -= cyl(2.5, mx, my, -1.0, 5.0)
+    return lid
+
+
+if __name__ == "__main__":
+    write_stl(build_body(), os.path.join(BASE, "doorbell-cam-body.stl"))
+    write_stl(build_lid(), os.path.join(BASE, "doorbell-cam-lid.stl"))
