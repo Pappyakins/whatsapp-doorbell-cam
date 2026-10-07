@@ -1,0 +1,11 @@
+// Copy this file to config.h and fill in your own values.
+// config.h is in .gitignore — NEVER commit the real one.
+
+#define WIFI_SSID     "YourHomeWiFi"
+#define WIFI_PASS     "YourWiFiPassword"
+
+// Home server endpoint (rserver on the LAN):
+#define SERVER_URL    "http://192.168.2.139:8099/api/doorbell-photo"
+
+// Must match /home/muse/photo-upload/doorbell_token.txt on the server.
+#define DEVICE_TOKEN  "paste-token-here"
