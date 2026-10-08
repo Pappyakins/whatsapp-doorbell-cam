@@ -66,12 +66,14 @@ view, parts list and wiring are in `case/doorbell-cam-assembly-drawing.pdf`
 
 - `doorbell-cam-body.stl` — 96 × 70 × 34.5 mm pebble body with a smooth
   rounded-rectangle silhouette (12 mm corner radius), 2.5 mm walls. The
-  front face has two raised circular bezels (2.5 mm proud): a **26 mm
-  bore** for the HC-SR501 Fresnel dome and a **20 mm bore** covering the
-  ESP32-CAM lens + flash LED. USB cable notch in the bottom wall.
-  Four corner bosses take M3 self-tapping screws.
-- `doorbell-cam-lid.stl` — matching rounded back lid, 3 mm, with M3
-  clearance holes and two 5 mm round holes for wall screws.
+  front face has two flush circular bezels: a **26 mm bore** for the
+  HC-SR501 Fresnel dome and a **20 mm bore** covering the ESP32-CAM lens
+  + flash LED. 18650 battery bay (saddle cradle, end stops, zip-tie
+  slots), main + charger USB notches in the bottom wall. Four Ø8 corner
+  bosses take M3 brass heat-set inserts.
+- `doorbell-cam-lid.stl` — matching rounded back lid, 5 mm, with M3
+  clearance holes + Ø5.6 counterbores (socket heads sit flush, recesses
+  face outward) and two 5 mm round holes for wall screws.
 
 Print settings: PETG recommended (porch/sun/heat), 0.2 mm layers, 3 walls,
 15% infill. **No supports needed** — print the body front-face-down
@@ -82,7 +84,8 @@ Assembly:
    glue, lining the PIR dome and camera lens up with their windows.
 2. Thread the USB cable through the bottom notch.
 3. Screw the lid to the wall through the two 5 mm holes (screw heads inside).
-4. Close the body onto the lid with four M3 × 8 screws.
+4. Close the body onto the lid with four M3 × 10 screws (heads sit
+   flush in the lid counterbores).
 
 ## Build order
 

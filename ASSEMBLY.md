@@ -13,7 +13,7 @@
 | 1 | 5V boost converter module |
 | 1 | 470µF electrolytic capacitor |
 | 4 | M3 brass heat-set inserts (≈4.6 mm OD × 5.7 mm long) |
-| 4 | M3×8 screws (lid → body) |
+| 4 | M3×10 socket-head screws (lid → body) |
 | 2 | Wall screws + anchors (for the 5 mm lid holes — sized to your wall) |
 | 1 | Small zip tie (≈2.5 mm wide) |
 | — | Jumper wire, solder |
@@ -26,7 +26,8 @@ programmer (3.3V) for flashing, small Phillips screwdriver, flush cutters.
 
 - PETG recommended (porch, sun, heat). 0.2 mm layers, 3 walls, 15% infill.
 - **Body: print front-face-down** (the flat face with the two round bores goes
-  on the build plate). **Lid: print flat.** No supports needed for either.
+  on the build plate). **Lid: print flat** (5 mm; the counterbore recesses
+  are on the top face). No supports needed for either.
 
 ## 2. Install the brass inserts
 
@@ -106,8 +107,9 @@ boost OUT− (GND) → common ground
 1. Hold the **lid** against the door frame/wall at ~1.5 m height, beside the
    door, aimed down the walkway — away from direct sun and HVAC vents.
 2. Fix the lid with 2 screws through the 5 mm holes (**screw heads inside**).
-3. Offer the body up and close it with the 4× M3×8 screws into the inserts.
-   Don't overtighten — snug is enough in PETG.
+3. Offer the body up and close it with the 4× M3×10 screws into the inserts —
+   heads sit flush in the lid counterbores (recesses face outward, away
+   from the body). Don't overtighten — snug is enough in PETG.
 
 ## Recharging
 

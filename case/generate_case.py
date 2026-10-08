@@ -11,8 +11,10 @@ Design (all mm):
       * PIR bezel: outer r17, 26 mm bore for the HC-SR501 Fresnel dome (23 mm)
       * Camera bezel: outer r14, 20 mm bore covering lens + flash LED
   - USB cable notch in the bottom wall (x 41..55, 5.5 tall, behind front plate).
-  - 4x corner bosses take M3 self-tapping screws (2.8 mm pilot).
-  - Lid: matching rounded back plate, 3 mm, M3 clearance + 2x 5 mm mount holes.
+  - 4x corner bosses (8 mm) take M3 brass heat-set inserts
+    (4.1 mm blind hole, 7 mm deep, lead-in chamfer); use M3x8 screws.
+  - Lid: matching rounded back plate, 5 mm, M3 clearance holes with
+    socket-head counterbores on the outer face + 2x 5 mm mount holes.
 
 Coordinates: x 0..96 (width), y 0..70 (height), z 0 at the body's front
 outer surface, increasing toward the back opening (z=34.5). The lid STL is
@@ -35,6 +37,13 @@ prints front-face-down with the first layer fully on the build plate —
 no bridging, no supports. Added the two zip-tie slots (the v3 groove had
 no way to thread the tie through).
 
+v3.3 (2026-10-08): PIR/camera bores raised 3 mm for ESP32-CAM clearance;
+screw bosses converted to M3 brass heat-set inserts (8 mm boss, 4.1 mm
+blind hole with lead-in chamfer).
+v3.4 (2026-10-08): lid thickened to 5 mm with 5.6 mm dia socket-head
+counterbores (3.2 deep) on the outer face — M3 socket-head screws sit
+flush so the lid mounts flat to the wall.
+
 Run with the project venv:
   ../.venv/bin/python generate_case.py
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
@@ -53,8 +62,8 @@ CX, CY = 48.0, 35.0                    # case centre
 W, H, R = 96.0, 70.0, 12.0             # outer silhouette
 WI, HI, RI = 91.0, 65.0, 9.5           # inner cavity (2.5 wall)
 T, D = 2.5, 34.5                       # front plate thickness, body depth
-PIR = (24.0, 38.0)                     # PIR bezel centre
-CAM = (68.0, 38.0)                     # camera bezel centre
+PIR = (24.0, 41.0)                     # PIR bezel centre (raised 3 mm for cam clearance)
+CAM = (68.0, 41.0)                     # camera bezel centre (raised 3 mm for cam clearance)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]           # lid wall-mount holes
 
@@ -105,12 +114,13 @@ def build_body():
     body -= rounded_prism(WI, HI, RI, T, D)                  # hollow interior
     body += cyl(17.0, *PIR, 0.0, T)                           # PIR bezel ring (flush)
     body += cyl(14.0, *CAM, 0.0, T)                           # camera bezel ring (flush)
-    for bx, by in BOSS:                                      # screw bosses
-        body += cyl(3.5, bx, by, T, 31.5)
+    for bx, by in BOSS:                                      # screw bosses (8 mm, insert-ready)
+        body += cyl(4.0, bx, by, T, 31.5)
     body -= cyl(13.0, *PIR, -T - 1, 10.0)                    # PIR bore (26 mm)
     body -= cyl(10.0, *CAM, -T - 1, 10.0)                    # camera bore (20 mm)
-    for bx, by in BOSS:                                      # M3 pilot holes (2.8)
-        body -= cyl(1.4, bx, by, T, 33.0)
+    for bx, by in BOSS:                                      # M3 insert holes (4.1, blind)
+        body -= cyl(2.05, bx, by, 27.0, 8.0)
+        body -= Manifold.cylinder(1.5, 2.05, 2.6, circular_segments=96).translate([bx, by, 33.0])  # lead-in funnel
     body -= box(41.0, -1.0, T, 14.0, T + 1.5, 5.5)           # USB notch, bottom wall
     body -= box(66.0, -1.0, T, 12.0, T + 1.5, 5.5)           # charger USB notch
     body -= box(45.5, 4.0, 0.0, 5.0, 20.0, 2.0)              # zip-tie groove, outer face
@@ -127,12 +137,16 @@ def build_body():
 
 
 # ================================================================== lid ==
+LID_T = 5.0                              # lid thickness (fits M3 socket-head counterbore)
+
 def build_lid():
-    lid = rounded_prism(W, H, R, 0.0, 3.0)
+    lid = rounded_prism(W, H, R, 0.0, LID_T)
     for bx, by in BOSS:                                      # M3 clearance (3.4)
-        lid -= cyl(1.7, bx, by, -1.0, 5.0)
+        lid -= cyl(1.7, bx, by, -1.0, LID_T + 2.0)
+    for bx, by in BOSS:                  # socket-head counterbore (5.6 dia, 3.2 deep)
+        lid -= cyl(2.8, bx, by, LID_T - 3.2, 4.0)   # outer face = z=LID_T side
     for mx, my in MOUNT:                                     # wall mount (5 mm)
-        lid -= cyl(2.5, mx, my, -1.0, 5.0)
+        lid -= cyl(2.5, mx, my, -1.0, LID_T + 2.0)
     return lid
 
 

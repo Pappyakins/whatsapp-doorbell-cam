@@ -15,17 +15,15 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import Circle, FancyArrow, Polygon, Rectangle
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-OUT = "/home/hatch/workspace/goals/esp32-cam-whatsapp-doorbell/files"
-os.makedirs(OUT, exist_ok=True)
-PDF = os.path.join(OUT, "doorbell-cam-assembly-drawing.pdf")
+PDF = os.path.join(BASE, "doorbell-cam-assembly-drawing.pdf")
 
 NAVY = "#1b2a4a"
 GOLD = "#c9a227"
 GREY = "#666666"
 LIGHT = "#e8ecf3"
 
-PIR = (24.0, 38.0)
-CAM = (68.0, 38.0)
+PIR = (24.0, 41.0)
+CAM = (68.0, 41.0)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]
 
@@ -72,7 +70,7 @@ def leader(ax, xy, xytext, text):
 def title_block(fig, title, subtitle):
     fig.text(0.045, 0.945, title, fontsize=15, weight="bold", color=NAVY)
     fig.text(0.045, 0.918, subtitle, fontsize=8.5, color=GREY)
-    fig.text(0.955, 0.945, "Rev 2026-10-02", fontsize=8, color=GREY,
+    fig.text(0.955, 0.945, "Rev 2026-10-08", fontsize=8, color=GREY,
              ha="right")
     fig.text(0.955, 0.918, "Units: mm · JakinsCraft", fontsize=8,
              color=GREY, ha="right")
@@ -99,8 +97,19 @@ for (x, y, r_out, r_bore) in ((*PIR, 17, 13), (*CAM, 14, 10)):
     ax.add_patch(Circle((x, y), r_bore, fill=False, lw=1.6, edgecolor=NAVY))
     centre_mark(ax, x, y, 3.5)
 for bx, by in BOSS:  # behind the front plate -> dashed
-    ax.add_patch(Circle((bx, by), 3.5, fill=False, lw=0.9,
+    ax.add_patch(Circle((bx, by), 4.0, fill=False, lw=0.9,
                         edgecolor=GREY, linestyle=(0, (3, 2))))
+for rx in (24.0, 56.0):  # 18650 saddle ribs (interior, dashed)
+    ax.add_patch(Rectangle((rx, 4.0), 6.0, 20.0, fill=False, lw=0.9,
+                           edgecolor=GREY, linestyle=(0, (3, 2))))
+for ex in (12.0, 82.0):  # cell end stops
+    ax.add_patch(Rectangle((ex, 6.0), 2.0, 16.0, fill=False, lw=0.9,
+                           edgecolor=GREY, linestyle=(0, (3, 2))))
+for sy in (3.0, 21.0):  # zip-tie slots through the floor
+    ax.add_patch(Rectangle((46.0, sy), 4.0, 4.0, fill=False, lw=0.9,
+                           edgecolor=GREY, linestyle=(0, (3, 2))))
+leader(ax, (59, 14), (74, 20),
+       "18650 bay: saddle ribs +\nend stops, zip-tie slots")
 view_title(ax, 48, 80, "FRONT VIEW — BODY (A)")
 dim_h(ax, 0, 96, -8, "96")
 dim_v(ax, 0, 70, 104, "70")
@@ -110,13 +119,13 @@ ax.text(12, 76.5, "24", ha="center", fontsize=7.5, color=NAVY)
 ax.annotate("", xy=(24, 75), xytext=(68, 75),
             arrowprops=dict(arrowstyle="<->", color=GREY, lw=0.8))
 ax.text(46, 76.5, "44", ha="center", fontsize=7.5, color=NAVY)
-dim_v(ax, 0, 38, -8, "38")
+dim_v(ax, 0, 41, -8, "41")
 leader(ax, (PIR[0] - 12, PIR[1] + 13), (-16, 63),
        "PIR bezel Ø34, bore Ø26\n(HC-SR501 dome Ø23)")
 leader(ax, (CAM[0] + 10, CAM[1] + 11), (74, 63),
        "Camera bezel Ø28, bore Ø20\n(lens + flash LED)")
-leader(ax, (10.5, 6.5), (38, -13),
-       "4× bosses Ø7 (dashed),\nØ2.8 pilot holes behind plate")
+leader(ax, (12, 6), (38, -13),
+       "4× bosses Ø8 (dashed),\nØ4.1 insert holes behind plate")
 
 # ---- lid view
 ax = fig1.add_axes([0.56, 0.60, 0.39, 0.28])
@@ -125,11 +134,13 @@ ax.set_xlim(-16, 112); ax.set_ylim(-16, 86)
 outline(ax)
 for bx, by in BOSS:
     ax.add_patch(Circle((bx, by), 1.7, fill=False, lw=1.2, edgecolor=NAVY))
+    ax.add_patch(Circle((bx, by), 2.8, fill=False, lw=0.9, edgecolor=GREY,
+                        linestyle=(0, (3, 2))))  # socket-head counterbore
     centre_mark(ax, bx, by, 2.2)
 for mx, my in MOUNT:
     ax.add_patch(Circle((mx, my), 2.5, fill=False, lw=1.2, edgecolor=NAVY))
     centre_mark(ax, mx, my, 2.2)
-view_title(ax, 48, 82, "LID (B) — OUTSIDE FACE, 3 THICK")
+view_title(ax, 48, 82, "LID (B) — OUTSIDE FACE, 5 THICK")
 ax.annotate("", xy=(8, -7), xytext=(88, -7),
             arrowprops=dict(arrowstyle="<->", color=GREY, lw=0.8))
 ax.text(48, -12.5, "80 (screw holes)", ha="center", fontsize=7, color=NAVY)
@@ -139,7 +150,7 @@ ax.text(106, 35, "54", fontsize=7.5, color=NAVY, rotation=90, va="center")
 ax.annotate("", xy=(-8, 12), xytext=(-8, 58),
             arrowprops=dict(arrowstyle="<->", color=GREY, lw=0.8))
 ax.text(-11, 35, "46", fontsize=7.5, color=NAVY, rotation=90, va="center")
-leader(ax, (88, 62), (90, 72), "4× Ø3.4 clearance\n(M3 screws)")
+leader(ax, (88, 62), (96, 64), "4× Ø3.4 clearance +\nØ5.6 × 3.2 deep counterbore\n(socket heads sit flush)")
 leader(ax, (48, 58), (0, 72), "2× Ø5 wall-mount\nholes")
 
 # ---- side view (depth profile)
@@ -147,8 +158,6 @@ ax = fig1.add_axes([0.56, 0.335, 0.39, 0.245])
 ax.set_aspect("equal"); ax.axis("off")
 ax.set_xlim(-10, 88); ax.set_ylim(-17, 56)
 ax.text(-8, 51, "SIDE VIEW — DEPTH", fontsize=9, weight="bold", color=NAVY)
-ax.add_patch(Rectangle((-2.5, 8), 2.5, 34, facecolor=LIGHT,
-                       edgecolor=NAVY, lw=1.2))            # bezel band
 ax.add_patch(Rectangle((0, 0), 34.5, 46, facecolor="none",
                        edgecolor=NAVY, lw=1.6))            # body
 ax.add_patch(Rectangle((0, 0), 2.5, 46, facecolor=LIGHT,
@@ -156,16 +165,14 @@ ax.add_patch(Rectangle((0, 0), 2.5, 46, facecolor=LIGHT,
 ax.add_patch(Rectangle((2.5, 5), 32, 36, facecolor="none",
                        edgecolor=GREY, lw=0.9,
                        linestyle=(0, (3, 2))))             # cavity
-ax.add_patch(Rectangle((42, 0), 3, 46, facecolor=LIGHT,
+ax.add_patch(Rectangle((40, 0), 5, 46, facecolor=LIGHT,
                        edgecolor=NAVY, lw=1.4))            # lid, offset
-ax.text(43.5, 49, "LID (B)", fontsize=7.5, color=NAVY, ha="center")
+ax.text(42.5, 49, "LID (B)", fontsize=7.5, color=NAVY, ha="center")
 ax.annotate("", xy=(0, -8), xytext=(34.5, -8),
             arrowprops=dict(arrowstyle="<->", color=GREY, lw=0.8))
 ax.text(17.25, -13.5, "body depth 34.5", ha="center", fontsize=7,
         color=NAVY)
-ax.text(-1.2, -5.0, "bezel +2.5", ha="center", fontsize=7, color=NAVY)
-ax.text(43.5, -13.5, "lid 3", ha="center", fontsize=7, color=NAVY)
-leader(ax, (1.2, 40), (12, 44), "front plate 2.5 thick")
+ax.text(42.5, -13.5, "lid 5", ha="center", fontsize=7, color=NAVY)
 leader(ax, (20, 23), (30, 12), "hollow interior\n(2.5 walls all round)")
 
 # ---- bottom view (USB notch)
@@ -181,8 +188,13 @@ ax.add_patch(Rectangle((41, 0), 14, 4.5, facecolor="white",
                        edgecolor=NAVY, lw=1.4))
 ax.plot([41, 41], [4.5, 12], color=NAVY, lw=1.2)
 ax.plot([55, 55], [4.5, 12], color=NAVY, lw=1.2)
-ax.text(48, -7.5, "cable notch 14 wide × 5.5 tall (x 41–55), "
-        "behind the front plate", ha="center", fontsize=7.5, color=NAVY)
+ax.add_patch(Rectangle((66, 0), 12, 4.5, facecolor="white",
+                       edgecolor=NAVY, lw=1.4))
+ax.plot([66, 66], [4.5, 12], color=NAVY, lw=1.2)
+ax.plot([78, 78], [4.5, 12], color=NAVY, lw=1.2)
+ax.text(48, -7.5, "notches 5.5 tall behind front plate: main USB x 41–55 "
+        "(14 wide), charger USB x 66–78 (12 wide)",
+        ha="center", fontsize=7.5, color=NAVY)
 
 # ---- notes
 notes = (
@@ -194,7 +206,9 @@ notes = (
     "BEFORE A LONG PRINT\n"
     "• Test-fit your parts: HC-SR501 dome is Ø23 (bore Ø26); ESP32-CAM\n"
     "  boards vary slightly between sellers. Print, check, then commit.\n"
-    "• USB power cable routes out through the bottom notch."
+    "• USB power cable routes out through the bottom notch.\n"
+    "• Press the 4 M3 brass inserts into the bosses (≈200°C iron)\n"
+    "  before wiring anything."
 )
 fig1.text(0.05, 0.035, notes, fontsize=8, color=NAVY, va="bottom",
           family="monospace")
@@ -223,19 +237,17 @@ def stack_box(x, y, w, h, label, sub, face="none"):
     ax.text(x + w / 2, y - 4.5, sub, ha="center", fontsize=6.8, color=GREY)
 
 
-ax.add_patch(Rectangle((2, 30), 4, 34, facecolor=LIGHT, edgecolor=NAVY))
-ax.text(4, 20, "bezels\n(front)", ha="center", fontsize=6.8, color=GREY)
 stack_box(12, 12, 42, 68, "A · BODY", "shell with bosses")
 stack_box(64, 24, 30, 44, "BOARDS", "ESP32-CAM · HC-SR501", face=LIGHT)
 stack_box(106, 12, 12, 68, "B · LID", "closes the back")
 for yy in (26, 68):
     ax.add_patch(FancyArrow(124, yy, -5, 0, width=0.4, head_width=3,
                             head_length=3, color=GOLD, lw=1.4))
-ax.text(128, 47, "4× M3×8\nself-tapping\nscrews", fontsize=7.5,
+ax.text(128, 47, "4× M3×10\nsocket-head\n+ brass inserts", fontsize=7.5,
         color=NAVY, va="center")
 ax.plot([33, 33], [12, 3], color=NAVY, lw=1.6)
 ax.plot([33, 42], [3, 3], color=NAVY, lw=1.6)
-ax.text(37, -3, "USB 5V cable out the bottom notch", fontsize=7,
+ax.text(37, -3, "charger USB reaches the bottom notch", fontsize=7,
         color=GREY, ha="center")
 
 # ---- parts list
@@ -245,10 +257,11 @@ bom = [
     ["B", "Enclosure lid (3D print, PETG)", "1"],
     ["1", "ESP32-CAM (AI-Thinker) + OV2640", "1"],
     ["2", "HC-SR501 PIR motion sensor", "1"],
-    ["3", "M3 × 8 self-tapping screws", "4"],
-    ["4", "470 µF capacitor (across 5V/GND)", "1"],
-    ["5", "USB 5V wall adapter + cable", "1"],
-    ["6", "FTDI USB-to-TTL programmer *", "1"],
+    ["3", "M3 × 10 socket-head screws", "4"],
+    ["4", "M3 brass heat-set inserts", "4"],
+    ["5", "18650 cell + TP4056 + 5V boost + zip tie", "1 ea."],
+    ["6", "470 µF capacitor (across 5V/GND)", "1"],
+    ["7", "FTDI USB-to-TTL programmer *", "1"],
 ]
 ax2 = fig2.add_axes([0.575, 0.615, 0.40, 0.26])
 ax2.axis("off")
@@ -263,30 +276,37 @@ for j in range(3):
 
 steps = (
     "ASSEMBLY ORDER\n"
-    "1. Print A and B. Dry-fit the PIR dome and camera board.\n"
-    "2. Flash the ESP32-CAM with the FTDI before it goes in.\n"
-    "3. Seat the PIR behind the Ø26 bore, dome poking through.\n"
-    "4. Seat the ESP32-CAM behind the Ø20 bore, lens + flash out.\n"
-    "   Fix boards with hot glue or foam tape.\n"
-    "5. Wire per the table below; put the 470 µF capacitor\n"
-    "   across 5V and GND, close to the ESP32-CAM.\n"
-    "6. Route the USB cable through the bottom notch.\n"
-    "7. Fix the lid (B) to the wall: two screws through the Ø5 holes.\n"
-    "8. Close the body onto the lid with the 4 M3 screws."
+    "1. Print A (face-down) and B (flat). No supports.\n"
+    "2. Press 4 brass inserts into the body bosses, flush.\n"
+    "3. Flash the ESP32-CAM with the FTDI before it goes in.\n"
+    "4. Wire the power chain + PIR per the table below;\n"
+    "   470 µF across 5V/GND, close to the ESP32-CAM.\n"
+    "5. Seat the PIR dome in the Ø26 bore, ESP32-CAM lens\n"
+    "   in the Ø20 bore (board long-side horizontal).\n"
+    "   VHB tape or hot glue.\n"
+    "6. Lay the 18650 in the cradle; zip tie up through one\n"
+    "   floor slot, over the cell, down the other slot.\n"
+    "7. Tape the TP4056 + boost beside the cradle; line the\n"
+    "   charger USB up with its bottom notch.\n"
+    "8. Bench-test: wave at the PIR → WhatsApp photo.\n"
+    "9. Fix the lid (B) to the wall through the Ø5 holes —\n"
+    "   counterbore recesses face OUT.\n"
+    "10. Close the body onto the lid with 4× M3×10;\n"
+    "    heads sit flush in the counterbores."
 )
-fig2.text(0.575, 0.575, steps, fontsize=8.2, color=NAVY, va="top",
+fig2.text(0.575, 0.575, steps, fontsize=7.8, color=NAVY, va="top",
           family="monospace")
 
 wiring = [
     ["From", "To", "Note"],
-    ["PIR VCC", "5V (USB)", "PIR runs on 5V"],
-    ["PIR GND", "GND", "common ground"],
+    ["18650 +/−", "TP4056 B+/B−", "check polarity first"],
+    ["TP4056 OUT", "boost IN", "—"],
+    ["boost +5V", "ESP32-CAM 5V", "470 µF across 5V/GND"],
+    ["GND", "common everywhere", "battery −, PIR, ESP"],
+    ["PIR VCC", "5V rail", "—"],
     ["PIR OUT", "ESP32-CAM GPIO 13", "wake-up trigger"],
-    ["USB 5V +", "ESP32-CAM 5V pin", "wall adapter power"],
-    ["USB GND", "ESP32-CAM GND", "—"],
-    ["470 µF cap", "across 5V / GND", "stops brown-outs"],
 ]
-ax3 = fig2.add_axes([0.575, 0.075, 0.40, 0.26])
+ax3 = fig2.add_axes([0.575, 0.02, 0.40, 0.25])
 ax3.axis("off")
 ax3.set_title("WIRING", fontsize=9, color=NAVY, weight="bold", loc="left")
 t = ax3.table(cellText=wiring, loc="upper left", cellLoc="left",
