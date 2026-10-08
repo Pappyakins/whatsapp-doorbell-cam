@@ -19,6 +19,8 @@ outer surface, increasing toward the back opening (z=34.5). The lid STL is
 exported in its own frame (z 0..3) so it drops flat onto the build plate.
 
 Print: body FRONT-FACE-DOWN, lid flat. No supports. PETG recommended.
+(The front face is fully flat — bezel rings are flush, so the first layer
+sits completely on the build plate with no bridging.)
 
 v3 (2026-10-06): battery edition. Adds an 18650 bay in the bottom of the
 interior: two saddle ribs cradle the cell (axis along X, centred y=14),
@@ -95,8 +97,8 @@ def write_stl(solid, path):
 def build_body():
     body = rounded_prism(W, H, R, 0.0, D)                    # outer shell
     body -= rounded_prism(WI, HI, RI, T, D)                  # hollow interior
-    body += cyl(17.0, *PIR, -T, T)                           # PIR bezel ring
-    body += cyl(14.0, *CAM, -T, T)                           # camera bezel ring
+    body += cyl(17.0, *PIR, 0.0, T)                           # PIR bezel ring (flush)
+    body += cyl(14.0, *CAM, 0.0, T)                           # camera bezel ring (flush)
     for bx, by in BOSS:                                      # screw bosses
         body += cyl(3.5, bx, by, T, 31.5)
     body -= cyl(13.0, *PIR, -T - 1, 10.0)                    # PIR bore (26 mm)
