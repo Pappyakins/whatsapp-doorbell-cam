@@ -24,10 +24,16 @@ sits completely on the build plate with no bridging.)
 
 v3 (2026-10-06): battery edition. Adds an 18650 bay in the bottom of the
 interior: two saddle ribs cradle the cell (axis along X, centred y=14),
-end stops fit 65-68 mm cells (bare or protected flat-top), a zip-tie
-groove in the floor under the cell mid-point, and a second USB notch in
-the bottom wall for the TP4056 charger's USB port. Small boards
-(TP4056, boost) tape down beside the cradle — standard DIY practice.
+end stops fit 65-68 mm cells (bare or protected flat-top). A zip tie locks
+the cell in: it threads up through one floor slot, over the cell, down
+through the other slot, and the buckle cinches into a shallow groove on
+the outer face. Small boards (TP4056, boost) tape down beside the
+cradle — standard DIY practice.
+
+v3.1 (2026-10-08): bezel rings sunk flush with the front face so the body
+prints front-face-down with the first layer fully on the build plate —
+no bridging, no supports. Added the two zip-tie slots (the v3 groove had
+no way to thread the tie through).
 
 Run with the project venv:
   ../.venv/bin/python generate_case.py
@@ -107,7 +113,9 @@ def build_body():
         body -= cyl(1.4, bx, by, T, 33.0)
     body -= box(41.0, -1.0, T, 14.0, T + 1.5, 5.5)           # USB notch, bottom wall
     body -= box(66.0, -1.0, T, 12.0, T + 1.5, 5.5)           # charger USB notch
-    body -= box(45.5, 4.0, 0.0, 5.0, 20.0, 2.0)              # zip-tie groove, floor
+    body -= box(45.5, 4.0, 0.0, 5.0, 20.0, 2.0)              # zip-tie groove, outer face
+    body -= box(46.0, 3.0, 0.0, 4.0, 4.0, T)                # zip-tie slot, -Y side
+    body -= box(46.0, 21.0, 0.0, 4.0, 4.0, T)               # zip-tie slot, +Y side
     # --- 18650 battery bay (cell axis along X at y=14, z-centre 12, r9) ---
     for sx in (24.0, 56.0):                                 # saddle ribs
         saddle = box(sx, 4.0, T, 6.0, 20.0, 18.5)
