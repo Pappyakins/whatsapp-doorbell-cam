@@ -10,6 +10,7 @@ import os
 
 import matplotlib
 matplotlib.use("Agg")
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import Circle, FancyArrow, Polygon, Rectangle
@@ -322,10 +323,43 @@ fig2.text(0.045, 0.035, "Fit check: AI-Thinker ESP32-CAM ≈ 40.5 × 27 mm · "
 fig2.text(0.955, 0.035, "Powered by @jakinsCraft", fontsize=8, color=GREY,
           ha="right")
 
+# ============================================================ PAGE 3 =====
+fig3 = plt.figure(figsize=(11, 8.5))
+title_block(fig3, "Pictorial assembly — WhatsApp Doorbell Cam",
+            "Realistic renders · Blender Cycles · true case STLs + modelled components")
+
+fit_img = mpimg.imread(os.path.join(BASE, "render-fitted.png"))
+exp_img = mpimg.imread(os.path.join(BASE, "render-exploded.png"))
+
+ax = fig3.add_axes([0.03, 0.28, 0.45, 0.55])
+ax.imshow(fit_img)
+ax.axis("off")
+fig3.text(0.255, 0.21,
+          "FITTED — transparent body, every component in place,\n"
+          "lid raised with the M3×10 screws above it",
+          ha="center", fontsize=8.5, color=NAVY)
+
+ax = fig3.add_axes([0.52, 0.28, 0.45, 0.55])
+ax.imshow(exp_img)
+ax.axis("off")
+fig3.text(0.745, 0.21,
+          "EXPLODED — assembly order, bottom to top:\n"
+          "body → brass inserts → PIR → ESP32-CAM → battery → lid → screws",
+          ha="center", fontsize=8.5, color=NAVY)
+
+fig3.text(0.045, 0.05,
+          "Component models: ESP32-CAM (40.5×27), HC-SR501 (32×24), 18650 cell,\n"
+          "TP4056 charger, 5V boost, 470µF capacitor, zip tie, brass inserts.",
+          fontsize=7.5, color=GREY, va="bottom")
+fig3.text(0.955, 0.05, "Powered by @jakinsCraft", fontsize=8, color=GREY,
+          ha="right")
+
 with PdfPages(PDF) as pdf:
     pdf.savefig(fig1)
     pdf.savefig(fig2)
+    pdf.savefig(fig3)
 fig1.savefig("/tmp/drawing-p1.png", dpi=110)
 fig2.savefig("/tmp/drawing-p2.png", dpi=110)
+fig3.savefig("/tmp/drawing-p3.png", dpi=110)
 plt.close("all")
 print("wrote", PDF)
