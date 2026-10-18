@@ -75,7 +75,7 @@ static bool init_camera() {
     s->set_awb_gain(s, 1);      // white-balance gain on
     s->set_wb_mode(s, 4);       // 4 = home (warm indoor light)
     s->set_exposure_ctrl(s, 1); // auto exposure on
-    s->set_aec2(s, 1);          // night mode: longer exposure, less gain
+    s->set_aec2(s, 0);          // night mode off: overexposes in bright rooms
     s->set_gain_ctrl(s, 1);      // auto gain on
     s->set_lenc(s, 1);          // lens shading correction on
     s->set_brightness(s, 0);
