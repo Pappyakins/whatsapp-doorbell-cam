@@ -4,19 +4,27 @@ Arduino sketch for the AI-Thinker ESP32-CAM. Deep-sleeps until the PIR
 wakes it, snaps an 800x600 JPEG, POSTs it to the home server, blinks the
 flash LED, and sleeps again.
 
-## Tuner mode (dial in the picture yourself)
+## Tuner (dial in the picture yourself)
 
-On a cold boot (power-on or RST press) the board waits 8 seconds for any
-key in the serial monitor. Type a character and press Enter inside that
-window and it starts a web tuner instead of the doorbell flow. The serial
-monitor prints its address, e.g. `Tuner at http://192.168.2.xxx`. Open
-that on your phone or laptop: you get a live preview plus sliders for
-white balance, WB mode, brightness, contrast, saturation, exposure (auto
-+ manual), gain (auto + manual) and lens correction. Move a slider and
-the preview updates. Hit **Save settings** and the values are stored in
-the board's flash — the normal doorbell flow uses them from then on.
-Reboot without sending a key to go back to doorbell mode. (PIR wakes skip
-the 8 s wait and go straight to capture.)
+The tuner is a **separate sketch** so the doorbell firmware stays lean:
+`firmware/doorbell-tuner/doorbell-tuner.ino`.
+
+1. Copy `config.h` from `firmware/` into `firmware/doorbell-tuner/`
+   (it needs your WiFi; `config.h` is gitignored).
+2. Flash the tuner sketch, open Serial Monitor at 115200, note the IP
+   it prints (`Tuner at http://192.168.2.xxx`).
+3. Open the IP in a browser: live preview plus sliders for white
+   balance, WB mode, brightness, contrast, saturation, exposure (auto +
+   manual), gain (auto + manual) and lens correction. Move a slider and
+   the preview updates.
+4. When the picture looks right, note the slider values and send them
+   over — they get baked into `doorbell-cam.ino` as the new defaults,
+   then you re-flash the doorbell firmware.
+
+If the tuner itself prints `camera init failed`, the issue is not the
+doorbell code: check Tools > Board = "AI Thinker ESP32-CAM",
+Tools > PSRAM = "Enabled", partition scheme "Huge APP", and that the
+camera ribbon is seated squarely in its connector.
 
 ## Flashing
 
