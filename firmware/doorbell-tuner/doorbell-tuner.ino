@@ -20,6 +20,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <Preferences.h>
+#include <ESPmDNS.h>
 #include "config.h"
 
 // ---- AI-Thinker ESP32-CAM pins ----
@@ -213,8 +214,11 @@ void setup() {
     Serial.print(".");
   }
   if (WiFi.status() != WL_CONNECTED) halt("wifi failed");
-  Serial.print("\nTuner at http://");
+  Serial.print("\nDoor cam tuner at http://");
   Serial.println(WiFi.localIP());
+  if (MDNS.begin("doorcam")) {
+    Serial.println("Also at http://doorcam.local");
+  }
 
   tunerServer.on("/", HTTP_GET, []() {
     tunerServer.send_P(200, "text/html", TUNER_HTML);
