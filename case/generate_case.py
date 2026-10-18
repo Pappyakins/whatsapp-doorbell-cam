@@ -8,7 +8,7 @@ Bambu Studio refused to open. These outputs are true watertight solids.
 Design (all mm):
   - Rounded-rectangle "pebble" body, 96 x 70 x 34.5, 2.5 wall, corner r12.
   - Front face with two raised circular bezels (2.5 proud):
-      * PIR bezel: outer r17, 26 mm bore for the HC-SR501 Fresnel dome (23 mm)
+      * PIR bezel: outer r17, 24 mm bore, snug for the HC-SR501 Fresnel dome (23 mm)
       * Camera bezel: outer r14, 20 mm bore covering lens + flash LED
   - USB cable notch in the bottom wall (x 41..55, 5.5 tall, behind front plate).
   - 4x corner bosses (8 mm) take M3 brass heat-set inserts
@@ -43,6 +43,8 @@ blind hole with lead-in chamfer).
 v3.4 (2026-10-08): lid thickened to 5 mm with 5.6 mm dia socket-head
 counterbores (3.2 deep) on the outer face — M3 socket-head screws sit
 flush so the lid mounts flat to the wall.
+v3.5 (2026-10-17): PIR bore reduced 26 -> 24 mm, snug fit for the 23 mm
+HC-SR501 dome (the 26 mm bore was loose).
 
 Run with the project venv:
   ../.venv/bin/python generate_case.py
@@ -116,7 +118,7 @@ def build_body():
     body += cyl(14.0, *CAM, 0.0, T)                           # camera bezel ring (flush)
     for bx, by in BOSS:                                      # screw bosses (8 mm, insert-ready)
         body += cyl(4.0, bx, by, T, 31.5)
-    body -= cyl(13.0, *PIR, -T - 1, 10.0)                    # PIR bore (26 mm)
+    body -= cyl(12.0, *PIR, -T - 1, 10.0)                    # PIR bore (24 mm, snug for 23 mm dome)
     body -= cyl(10.0, *CAM, -T - 1, 10.0)                    # camera bore (20 mm)
     for bx, by in BOSS:                                      # M3 insert holes (4.1, blind)
         body -= cyl(2.05, bx, by, 27.0, 8.0)
