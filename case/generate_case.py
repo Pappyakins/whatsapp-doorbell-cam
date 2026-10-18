@@ -9,7 +9,9 @@ Design (all mm):
   - Rounded-rectangle "pebble" body, 96 x 70 x 34.5, 2.5 wall, corner r12.
   - Front face with two raised circular bezels (2.5 proud):
       * PIR bezel: outer r17, 24 mm bore, snug for the HC-SR501 Fresnel dome (23 mm)
-      * Camera bezel: outer r14, 20 mm bore covering lens + flash LED
+      * Camera bezel: outer r10, 12 mm bore for the lens only, plus a
+        separate 8 mm bore for the flash LED (13 mm right, 14 mm below
+        the lens centre, measured from Pappy's board)
   - USB cable notch in the bottom wall (x 41..55, 5.5 tall, behind front plate).
   - 4x corner bosses (8 mm) take M3 brass heat-set inserts
     (4.1 mm blind hole, 7 mm deep, lead-in chamfer); use M3x8 screws.
@@ -45,6 +47,9 @@ counterbores (3.2 deep) on the outer face — M3 socket-head screws sit
 flush so the lid mounts flat to the wall.
 v3.5 (2026-10-17): PIR bore reduced 26 -> 24 mm, snug fit for the 23 mm
 HC-SR501 dome (the 26 mm bore was loose).
+v3.6 (2026-10-18): camera bore 20 -> 12 mm (lens only, the big round hole
+was oversized); bezel r14 -> r10; added a separate 8 mm flash LED bore
+at (81, 27) — 13 mm right, 14 mm below the lens centre.
 
 Run with the project venv:
   ../.venv/bin/python generate_case.py
@@ -66,6 +71,8 @@ WI, HI, RI = 91.0, 65.0, 9.5           # inner cavity (2.5 wall)
 T, D = 2.5, 34.5                       # front plate thickness, body depth
 PIR = (24.0, 41.0)                     # PIR bezel centre (raised 3 mm for cam clearance)
 CAM = (68.0, 41.0)                     # camera bezel centre (raised 3 mm for cam clearance)
+FLASH = (81.0, 27.0)                   # flash LED bore centre: 13 right, 14 below lens
+                                       # (measured from Pappy's board photo, 2026-10-18)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]           # lid wall-mount holes
 
@@ -115,11 +122,12 @@ def build_body():
     body = rounded_prism(W, H, R, 0.0, D)                    # outer shell
     body -= rounded_prism(WI, HI, RI, T, D)                  # hollow interior
     body += cyl(17.0, *PIR, 0.0, T)                           # PIR bezel ring (flush)
-    body += cyl(14.0, *CAM, 0.0, T)                           # camera bezel ring (flush)
+    body += cyl(10.0, *CAM, 0.0, T)                           # camera bezel ring (flush)
     for bx, by in BOSS:                                      # screw bosses (8 mm, insert-ready)
         body += cyl(4.0, bx, by, T, 31.5)
     body -= cyl(12.0, *PIR, -T - 1, 10.0)                    # PIR bore (24 mm, snug for 23 mm dome)
-    body -= cyl(10.0, *CAM, -T - 1, 10.0)                    # camera bore (20 mm)
+    body -= cyl(6.0, *CAM, -T - 1, 10.0)                     # camera bore (12 mm, lens only)
+    body -= cyl(4.0, *FLASH, -T - 1, 10.0)                   # flash LED bore (8 mm)
     for bx, by in BOSS:                                      # M3 insert holes (4.1, blind)
         body -= cyl(2.05, bx, by, 27.0, 8.0)
         body -= Manifold.cylinder(1.5, 2.05, 2.6, circular_segments=96).translate([bx, by, 33.0])  # lead-in funnel
