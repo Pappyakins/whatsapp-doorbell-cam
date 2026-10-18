@@ -65,22 +65,22 @@ static bool init_camera() {
   cfg.grab_mode = CAMERA_GRAB_LATEST;
   if (esp_camera_init(&cfg) != ESP_OK) return false;
 
-  // ---- image tuning for indoor / porch lighting ----
-  // Kills the purple cast and tames grain: white balance locked to
-  // "home" (warm indoor light), lens shading correction on, night
-  // exposure mode so the sensor favours longer exposure over max gain.
+  // ---- image settings dialed in via the tuner (2026-10-17) ----
+  // White balance on, WB mode Home, brightness -1, contrast 0,
+  // saturation 0, manual exposure 460, manual gain 22, lens correction on.
   sensor_t *s = esp_camera_sensor_get();
   if (s) {
     s->set_whitebal(s, 1);      // auto white balance on
     s->set_awb_gain(s, 1);      // white-balance gain on
     s->set_wb_mode(s, 4);       // 4 = home (warm indoor light)
-    s->set_exposure_ctrl(s, 1); // auto exposure on
-    s->set_aec2(s, 0);          // night mode off: overexposes in bright rooms
-    s->set_gain_ctrl(s, 1);      // auto gain on
+    s->set_brightness(s, -1);
+    s->set_contrast(s, 0);
+    s->set_saturation(s, 0);
+    s->set_exposure_ctrl(s, 0); // manual exposure...
+    s->set_aec_value(s, 460);   // ...at 460
+    s->set_gain_ctrl(s, 0);     // manual gain...
+    s->set_agc_gain(s, 22);     // ...at 22
     s->set_lenc(s, 1);          // lens shading correction on
-    s->set_brightness(s, 0);
-    s->set_contrast(s, 1);      // slight contrast lift
-    s->set_saturation(s, -1);    // pull saturation back a touch
   }
   return true;
 }
