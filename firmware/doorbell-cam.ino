@@ -63,7 +63,26 @@ static bool init_camera() {
   cfg.fb_count = 1;
   cfg.fb_location = CAMERA_FB_IN_PSRAM;
   cfg.grab_mode = CAMERA_GRAB_LATEST;
-  return esp_camera_init(&cfg) == ESP_OK;
+  if (esp_camera_init(&cfg) != ESP_OK) return false;
+
+  // ---- image tuning for indoor / porch lighting ----
+  // Kills the purple cast and tames grain: white balance locked to
+  // "home" (warm indoor light), lens shading correction on, night
+  // exposure mode so the sensor favours longer exposure over max gain.
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_whitebal(s, 1);      // auto white balance on
+    s->set_awb_gain(s, 1);      // white-balance gain on
+    s->set_wb_mode(s, 4);       // 4 = home (warm indoor light)
+    s->set_exposure_ctrl(s, 1); // auto exposure on
+    s->set_aec2(s, 1);          // night mode: longer exposure, less gain
+    s->set_gain_ctrl(s, 1);      // auto gain on
+    s->set_lenc(s, 1);          // lens shading correction on
+    s->set_brightness(s, 0);
+    s->set_contrast(s, 1);      // slight contrast lift
+    s->set_saturation(s, -1);    // pull saturation back a touch
+  }
+  return true;
 }
 
 // base64-encode raw bytes into an Arduino String
@@ -129,8 +148,8 @@ void setup() {
     go_to_sleep();
   }
 
-  // let auto-exposure settle, then grab
-  delay(400);
+  // let auto-exposure and white balance settle, then grab
+  delay(1000);
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("capture failed");
