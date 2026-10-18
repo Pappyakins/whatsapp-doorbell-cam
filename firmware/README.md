@@ -6,15 +6,17 @@ flash LED, and sleeps again.
 
 ## Tuner mode (dial in the picture yourself)
 
-Hold the **IO0 button** while powering on / pressing RST and the board
-starts a web tuner instead of the doorbell flow. The serial monitor prints
-its address, e.g. `Tuner at http://192.168.2.xxx`. Open that on your phone
-or laptop: you get a live preview plus sliders for white balance, WB mode,
-brightness, contrast, saturation, exposure (auto + manual), gain (auto +
-manual) and lens correction. Move a slider and the preview updates. Hit
-**Save settings** and the values are stored in the board's flash — the
-normal doorbell flow uses them from then on. Reboot without holding IO0
-to go back to doorbell mode.
+On a cold boot (power-on or RST press) the board waits 8 seconds for any
+key in the serial monitor. Type a character and press Enter inside that
+window and it starts a web tuner instead of the doorbell flow. The serial
+monitor prints its address, e.g. `Tuner at http://192.168.2.xxx`. Open
+that on your phone or laptop: you get a live preview plus sliders for
+white balance, WB mode, brightness, contrast, saturation, exposure (auto
++ manual), gain (auto + manual) and lens correction. Move a slider and
+the preview updates. Hit **Save settings** and the values are stored in
+the board's flash — the normal doorbell flow uses them from then on.
+Reboot without sending a key to go back to doorbell mode. (PIR wakes skip
+the 8 s wait and go straight to capture.)
 
 ## Flashing
 

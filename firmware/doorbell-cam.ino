@@ -6,12 +6,13 @@
 //     flash LED once, then goes back to deep sleep.
 //   * On power-on: sends one "doorbell online" photo, then sleeps.
 //
-// TUNER MODE: hold the IO0 button while powering on / pressing RST and the
-// board starts a WiFi web page instead of the doorbell flow. The page shows
-// a live preview plus sliders for every image setting (white balance,
-// brightness, contrast, saturation, exposure, gain, lens correction).
-// Dial it in, hit Save, and the values are stored in flash — the normal
-// doorbell flow uses them from then on.
+// TUNER MODE: on a cold boot (power-on or RST press) the board waits a few
+// seconds for any key in the serial monitor. Send one and it starts a WiFi
+// web page instead of the doorbell flow. The page shows a live preview plus
+// sliders for every image setting (white balance, brightness, contrast,
+// saturation, exposure, gain, lens correction). Dial it in, hit Save, and
+// the values are stored in flash — the normal doorbell flow uses them from
+// then on. PIR wakes skip the wait and go straight to capture.
 //
 // Copy config.h.example -> config.h and fill in your values.
 // config.h is gitignored — never commit Wi-Fi credentials or the token.
@@ -308,15 +309,23 @@ void setup() {
 
   loadTune();  // saved tuner settings, or defaults on first run
 
-  // Tuner mode: IO0 held low at boot (IO0 button on the MB breakout board).
-  // Checked before the camera takes over GPIO0 as XCLK.
-  pinMode(0, INPUT_PULLUP);
-  delay(100);
-  if (digitalRead(0) == LOW) {
-    runTuner();  // never returns
+  esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+
+  // Tuner mode: on a cold boot (power-on / RST press, not a PIR wake),
+  // any key in the serial monitor within 8 s starts the web tuner.
+  // PIR wakes skip the wait and go straight to capture.
+  if (cause == ESP_SLEEP_WAKEUP_UNDEFINED) {
+    Serial.println("Send any key within 8 s for TUNER mode...");
+    unsigned long t0 = millis();
+    while (millis() - t0 < 8000) {
+      if (Serial.available()) {
+        while (Serial.available()) Serial.read();
+        runTuner();  // never returns
+      }
+      delay(50);
+    }
   }
 
-  esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
   if (cause != ESP_SLEEP_WAKEUP_EXT0 && cause != ESP_SLEEP_WAKEUP_UNDEFINED) {
     go_to_sleep();  // woke for another reason — back to sleep
   }
