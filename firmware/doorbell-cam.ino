@@ -11,6 +11,7 @@
 
 #include "esp_camera.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include "mbedtls/base64.h"
 #include "config.h"
@@ -115,8 +116,15 @@ static bool send_photo(const String &b64photo) {
   Serial.print("wifi ok, rssi ");
   Serial.println(WiFi.RSSI());
 
+  WiFiClientSecure secureClient;
+  secureClient.setInsecure();
   HTTPClient http;
-  http.begin(SERVER_URL);                      // e.g. http://192.168.2.139:8099/api/doorbell-photo
+  String postUrl = String(SERVER_URL);
+  if (postUrl.startsWith("https://")) {
+    http.begin(secureClient, SERVER_URL);      // e.g. https://rserver.beagle-sunfish.ts.net/api/doorbell-photo
+  } else {
+    http.begin(SERVER_URL);                    // e.g. http://192.168.2.139:8099/api/doorbell-photo
+  }
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(15000);
   String body = "{\"token\":\"" + String(DEVICE_TOKEN) + "\",\"photo\":\"" + b64photo + "\"}";
