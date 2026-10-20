@@ -1,5 +1,9 @@
 # BLE provisioning protocol
 
+The setup app is the **JakinsCraft ESP Cam Setup** PWA (Chrome on Android,
+Web Bluetooth): https://pappyakins.github.io/esp-cam-setup/ — source:
+Pappyakins/esp-cam-setup. The protocol below is what it speaks.
+
 How the JakinsCraft ESP Setup app configures a doorbell cam over
 Bluetooth Low Energy. Implemented in `doorbell-cam.ino`; settings are
 stored in the NVS namespace `doorcfg` and override `config.h`.

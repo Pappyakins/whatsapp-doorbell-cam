@@ -182,6 +182,7 @@ static void run_provisioning() {
   snprintf(suffix, sizeof(suffix), "%02X%02X", mac[4], mac[5]);
   advName += suffix;
 
+  BLEDevice::setMTU(517);  // values (URL, token) exceed the 23-byte default MTU
   BLEDevice::init(advName.c_str());
   BLEServer *server = BLEDevice::createServer();
   BLEService *svc = server->createService(PROV_SERVICE_UUID);
