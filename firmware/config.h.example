@@ -8,4 +8,10 @@
 #define SERVER_URL    "http://192.168.2.139:8099/api/doorbell-photo"
 
 // Must match /home/muse/photo-upload/doorbell_token.txt on the server.
+// One token is shared by all your doorbell cameras.
 #define DEVICE_TOKEN  "paste-token-here"
+
+// Optional: a name for THIS camera, sent with every photo so the WhatsApp
+// message says which camera fired. Plain words only, no quotes.
+// Delete the line (or leave it empty) for no name.
+#define CAMERA_NAME   "Front Door"

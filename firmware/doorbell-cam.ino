@@ -16,6 +16,13 @@
 #include "mbedtls/base64.h"
 #include "config.h"
 
+// Optional: give this camera a name ("Front Door", "Back Door", ...) in
+// config.h and it is sent with every photo so the WhatsApp message says
+// which camera fired. Old config.h files without it still compile.
+#ifndef CAMERA_NAME
+#define CAMERA_NAME ""
+#endif
+
 // ---- AI-Thinker ESP32-CAM pins ----
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
@@ -127,7 +134,7 @@ static bool send_photo(const String &b64photo) {
   }
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(15000);
-  String body = "{\"token\":\"" + String(DEVICE_TOKEN) + "\",\"photo\":\"" + b64photo + "\"}";
+  String body = "{\"token\":\"" + String(DEVICE_TOKEN) + "\",\"name\":\"" + String(CAMERA_NAME) + "\",\"photo\":\"" + b64photo + "\"}";
   int code = http.POST(body);
   Serial.print("POST -> ");
   Serial.println(code);
