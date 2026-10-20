@@ -23,6 +23,14 @@
 #define CAMERA_NAME ""
 #endif
 
+// Optional: WhatsApp number this camera should alert, digits only with
+// country code (e.g. "14165550123"). The server only honors numbers on
+// its allowlist (doorbell.json); anything else falls back to the default
+// notify_to there. Empty = use the server default.
+#ifndef NOTIFY_TO
+#define NOTIFY_TO ""
+#endif
+
 // ---- AI-Thinker ESP32-CAM pins ----
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
@@ -134,7 +142,7 @@ static bool send_photo(const String &b64photo) {
   }
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(15000);
-  String body = "{\"token\":\"" + String(DEVICE_TOKEN) + "\",\"name\":\"" + String(CAMERA_NAME) + "\",\"photo\":\"" + b64photo + "\"}";
+  String body = "{\"token\":\"" + String(DEVICE_TOKEN) + "\",\"name\":\"" + String(CAMERA_NAME) + "\",\"to\":\"" + String(NOTIFY_TO) + "\",\"photo\":\"" + b64photo + "\"}";
   int code = http.POST(body);
   Serial.print("POST -> ");
   Serial.println(code);

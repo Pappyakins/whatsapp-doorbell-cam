@@ -15,3 +15,9 @@
 // message says which camera fired. Plain words only, no quotes.
 // Delete the line (or leave it empty) for no name.
 #define CAMERA_NAME   "Front Door"
+
+// Optional: WhatsApp number THIS camera alerts, digits only with country
+// code. The server only honors numbers on its allowlist (doorbell.json
+// "allowed_numbers"); anything else uses the server default number.
+// Leave empty to use the server default.
+#define NOTIFY_TO     ""
