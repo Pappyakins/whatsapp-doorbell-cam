@@ -72,14 +72,19 @@ boost OUT− (GND) → common ground
 
 ## 6. Mount the boards in the body
 
-- **ESP32-CAM:** behind the 20 mm bore, lens centred in the hole, **board
-  long-side horizontal**. The flash LED sits beside the lens inside the same
-  bore. Fix with VHB tape or a dab of hot glue — keep the ESP antenna area
-  clear of metal.
-- **PIR:** behind the 26 mm bore with the white Fresnel dome poking into it.
+- **ESP32-CAM:** lens centred in the 13 mm bore, **board long-side
+  horizontal with the antenna end to the RIGHT**. On the board the flash
+  LED sits down and to the left of the lens in this mounting, exactly
+  behind the separate 8 mm flash bore. Fix with ~2 mm foam VHB tape so
+  the lens base clears the bore rim — keep the antenna area (the right
+  end of the board) clear of metal.
+- **PIR:** behind the 24 mm bore with the white Fresnel dome poking into
+  it; shim with foam tape until the dome tip sits just inside the bore.
   Same fixing method.
-- Keep the boards 2–3 mm off the front plate if you can; the bores were
-  positioned so nothing fouls the battery bay.
+- Board positions and bores were checked against the standard part
+  dimensions (Ai-Thinker datasheet for the ESP32-CAM) with a pairwise
+  interference check — see `case/check_fit.py`. Nothing fouls the
+  battery bay.
 
 ## 7. Fit the battery
 
@@ -91,9 +96,15 @@ boost OUT− (GND) → common ground
 
 ## 8. Fit the charger and boost boards
 
-- Tape the TP4056 and boost module down **beside** the cradle with VHB tape.
-- Line the TP4056's USB port up with the charger notch in the bottom wall —
-  that's how you'll plug in to recharge without opening the case.
+- Stand the TP4056 and the boost module **upright at the back of the
+  case, along the bottom wall, behind the battery**, components facing
+  the battery, VHB tape on their back edges. Boost on the left
+  (x ≈ 16–52), the 470 µF capacitor lying beside it, TP4056 on the
+  right (x ≈ 64–83).
+- The TP4056 stands with its USB end **down**: the micro-USB port meets
+  the charger notch in the bottom wall (the notch is set deep, beside
+  the lid) — that's how you'll plug in to recharge without opening
+  the case.
 
 ## 9. Bench-test before closing
 

@@ -24,7 +24,8 @@ GREY = "#666666"
 LIGHT = "#e8ecf3"
 
 PIR = (24.0, 41.0)
-CAM = (68.0, 41.0)
+CAM = (70.0, 41.0)
+FLASH = (51.8, 29.7)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]
 
@@ -71,7 +72,7 @@ def leader(ax, xy, xytext, text):
 def title_block(fig, title, subtitle):
     fig.text(0.045, 0.945, title, fontsize=15, weight="bold", color=NAVY)
     fig.text(0.045, 0.918, subtitle, fontsize=8.5, color=GREY)
-    fig.text(0.955, 0.945, "Rev 2026-10-08", fontsize=8, color=GREY,
+    fig.text(0.955, 0.945, "Rev 2026-10-20", fontsize=8, color=GREY,
              ha="right")
     fig.text(0.955, 0.918, "Units: mm · JakinsCraft", fontsize=8,
              color=GREY, ha="right")
@@ -93,10 +94,12 @@ ax = fig1.add_axes([0.05, 0.31, 0.44, 0.57])
 ax.set_aspect("equal"); ax.axis("off")
 ax.set_xlim(-18, 112); ax.set_ylim(-17, 88)
 outline(ax)
-for (x, y, r_out, r_bore) in ((*PIR, 17, 13), (*CAM, 14, 10)):
+for (x, y, r_out, r_bore) in ((*PIR, 17, 12), (*CAM, 10, 6.5)):
     ax.add_patch(Circle((x, y), r_out, fill=False, lw=1.6, edgecolor=NAVY))
     ax.add_patch(Circle((x, y), r_bore, fill=False, lw=1.6, edgecolor=NAVY))
     centre_mark(ax, x, y, 3.5)
+ax.add_patch(Circle(FLASH, 4.0, fill=False, lw=1.6, edgecolor=NAVY))
+centre_mark(ax, *FLASH, 3.0)
 for bx, by in BOSS:  # behind the front plate -> dashed
     ax.add_patch(Circle((bx, by), 4.0, fill=False, lw=0.9,
                         edgecolor=GREY, linestyle=(0, (3, 2))))
@@ -117,14 +120,16 @@ dim_v(ax, 0, 70, 104, "70")
 ax.annotate("", xy=(0, 75), xytext=(24, 75),
             arrowprops=dict(arrowstyle="<->", color=GREY, lw=0.8))
 ax.text(12, 76.5, "24", ha="center", fontsize=7.5, color=NAVY)
-ax.annotate("", xy=(24, 75), xytext=(68, 75),
+ax.annotate("", xy=(24, 75), xytext=(70, 75),
             arrowprops=dict(arrowstyle="<->", color=GREY, lw=0.8))
-ax.text(46, 76.5, "44", ha="center", fontsize=7.5, color=NAVY)
+ax.text(47, 76.5, "46", ha="center", fontsize=7.5, color=NAVY)
 dim_v(ax, 0, 41, -8, "41")
 leader(ax, (PIR[0] - 12, PIR[1] + 13), (-16, 63),
-       "PIR bezel Ø34, bore Ø26\n(HC-SR501 dome Ø23)")
+       "PIR bezel Ø34, bore Ø24\n(HC-SR501 dome Ø23)")
 leader(ax, (CAM[0] + 10, CAM[1] + 11), (74, 63),
-       "Camera bezel Ø28, bore Ø20\n(lens + flash LED)")
+       "Camera bezel Ø20, bore Ø13\n(lens only)")
+leader(ax, FLASH, (30, 12),
+       "Flash bore Ø8 — LED lands here with the\nboard landscape, antenna end RIGHT")
 leader(ax, (12, 6), (38, -13),
        "4× bosses Ø8 (dashed),\nØ4.1 insert holes behind plate")
 
@@ -185,16 +190,12 @@ ax.add_patch(Rectangle((0, 0), 96, 12, facecolor="none", edgecolor=NAVY,
                        lw=1.6))
 ax.add_patch(Rectangle((2.5, 2.5), 91, 7, facecolor="none",
                        edgecolor=GREY, lw=0.8, linestyle=(0, (3, 2))))
-ax.add_patch(Rectangle((41, 0), 14, 4.5, facecolor="white",
-                       edgecolor=NAVY, lw=1.4))
-ax.plot([41, 41], [4.5, 12], color=NAVY, lw=1.2)
-ax.plot([55, 55], [4.5, 12], color=NAVY, lw=1.2)
 ax.add_patch(Rectangle((66, 0), 12, 4.5, facecolor="white",
                        edgecolor=NAVY, lw=1.4))
 ax.plot([66, 66], [4.5, 12], color=NAVY, lw=1.2)
 ax.plot([78, 78], [4.5, 12], color=NAVY, lw=1.2)
-ax.text(48, -7.5, "notches 5.5 tall behind front plate: main USB x 41–55 "
-        "(14 wide), charger USB x 66–78 (12 wide)",
+ax.text(48, -7.5, "charger USB notch x 66–78 (12 wide), 5 tall, set deep "
+        "at z 26–31 beside the lid, where the TP4056 stands",
         ha="center", fontsize=7.5, color=NAVY)
 
 # ---- notes
@@ -205,9 +206,9 @@ notes = (
     "• Both STLs are single watertight solids — they open directly\n"
     "  in Bambu Studio (fixed 2026-10-02; the old files were not).\n\n"
     "BEFORE A LONG PRINT\n"
-    "• Test-fit your parts: HC-SR501 dome is Ø23 (bore Ø26); ESP32-CAM\n"
+    "• Test-fit your parts: HC-SR501 dome is Ø23 (bore Ø24); ESP32-CAM\n"
     "  boards vary slightly between sellers. Print, check, then commit.\n"
-    "• USB power cable routes out through the bottom notch.\n"
+    "• Charging cable reaches the TP4056 through the deep bottom notch.\n"
     "• Press the 4 M3 brass inserts into the bosses (≈200°C iron)\n"
     "  before wiring anything."
 )
@@ -226,7 +227,7 @@ ax.set_aspect("equal"); ax.axis("off")
 ax.set_xlim(-14, 150); ax.set_ylim(-18, 96)
 ax.text(62, 93, "EXPLODED VIEW (schematic, front → back)", fontsize=9,
         weight="bold", color=NAVY, ha="center")
-ax.text(62, 88.5, "lens + flash face the Ø20 bore · PIR dome faces the Ø26 bore",
+ax.text(62, 88.5, "lens faces the Ø13 bore, flash the Ø8 bore · PIR dome faces the Ø24 bore",
         fontsize=7.5, color=NAVY, ha="center")
 
 
@@ -282,18 +283,17 @@ steps = (
     "3. Flash the ESP32-CAM with the FTDI before it goes in.\n"
     "4. Wire the power chain + PIR per the table below;\n"
     "   470 µF across 5V/GND, close to the ESP32-CAM.\n"
-    "5. Seat the PIR dome in the Ø26 bore, ESP32-CAM lens\n"
-    "   in the Ø20 bore (board long-side horizontal).\n"
-    "   VHB tape or hot glue.\n"
+    "5. Seat the PIR dome in the Ø24 bore, ESP32-CAM lens\n"
+    "   in the Ø13 bore (board horizontal, antenna end\n"
+    "   RIGHT — flash LED then meets the Ø8 bore). VHB/hot glue.\n"
     "6. Lay the 18650 in the cradle; zip tie up through one\n"
     "   floor slot, over the cell, down the other slot.\n"
-    "7. Tape the TP4056 + boost beside the cradle; line the\n"
-    "   charger USB up with its bottom notch.\n"
+    "7. Stand TP4056 + boost upright at the back, along\n"
+    "   the bottom wall; TP4056 USB faces the deep notch.\n"
     "8. Bench-test: wave at the PIR → WhatsApp photo.\n"
     "9. Fix the lid (B) to the wall through the Ø5 holes —\n"
     "   counterbore recesses face OUT.\n"
-    "10. Close the body onto the lid with 4× M3×10;\n"
-    "    heads sit flush in the counterbores."
+    "10. Close the body onto the lid, 4× M3×10, flush."
 )
 fig2.text(0.575, 0.575, steps, fontsize=7.8, color=NAVY, va="top",
           family="monospace")

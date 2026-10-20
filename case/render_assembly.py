@@ -121,20 +121,20 @@ BASE_Z[lid] = 0.0
 G["lid"] = [lid]
 
 # -------------------------------------------------------- components ---
-g = grp("esp")  # ESP32-CAM at (68,41), long side horizontal
-box("esp_pcb", (40.5, 27, 1.6), (68, 41, 6.8), GREEN, g)
-box("esp_shield", (18, 20, 3), (58, 41, 9.1), SHIELD, g)
-box("esp_cam", (12, 12, 4), (68, 41, 9.6), BLACK, g)
-cyl("esp_lens", 4, 2.5, (68, 41, 12.8), GLASS, g)
-box("esp_flash", (3, 2, 1), (76, 41, 9.0), WHITE, g)
-box("esp_c1", (4, 3, 1.5), (82, 32, 8.6), BLACK, g)
-box("esp_c2", (3, 3, 1.5), (52, 50, 8.6), BLACK, g)
+g = grp("esp")  # ESP32-CAM at (70,41), long side horizontal, antenna end right
+box("esp_pcb", (40.5, 27, 1.6), (70, 41, 6.8), GREEN, g)
+box("esp_shield", (18, 20, 3), (60, 41, 9.1), SHIELD, g)
+box("esp_cam", (12, 12, 4), (70, 41, 9.6), BLACK, g)
+cyl("esp_lens", 4, 2.5, (70, 41, 12.8), GLASS, g)
+box("esp_flash", (3, 2, 1), (51.8, 29.7, 9.0), WHITE, g)
+box("esp_c1", (4, 3, 1.5), (84, 32, 8.6), BLACK, g)
+box("esp_c2", (3, 3, 1.5), (54, 50, 8.6), BLACK, g)
 
-g = grp("pir")  # HC-SR501 at (24,41)
-box("pir_pcb", (32, 24, 1.6), (24, 41, 5.8), BLUE, g)
-ball("pir_dome", 11.5, (24, 41, 14.0), WHITE, g, scale_z=0.75)
-box("pir_c1", (5, 4, 2), (14, 34, 7.6), BLACK, g)
-box("pir_c2", (5, 4, 2), (34, 48, 7.6), BLACK, g)
+g = grp("pir")  # HC-SR501 at (24,41), PCB ~10 deep (dome height)
+box("pir_pcb", (32, 24, 1.6), (24, 41, 10.8), BLUE, g)
+ball("pir_dome", 11.5, (24, 41, 6.0), WHITE, g, scale_z=0.75)
+box("pir_c1", (5, 4, 2), (14, 34, 12.6), BLACK, g)
+box("pir_c2", (5, 4, 2), (34, 48, 12.6), BLACK, g)
 
 g = grp("cell")  # 18650, axis along X at y=14, z=12
 cyl("cell", 9, 68, (48, 14, 12), CELL, g, rotation=(0, math.pi / 2, 0))
@@ -145,18 +145,20 @@ g = grp("tie")  # zip tie loop in YZ plane
 torus("tie", 10.8, 1.2, (48, 14, 12), NYLON, g, rotation=(0, math.pi / 2, 0))
 box("tie_buckle", (5, 4, 3), (48, 14, 23.5), NYLON, g)
 
-g = grp("tp4056")  # charger board beside cradle
-box("tp_pcb", (25, 15, 3), (30, 59, 5.0), BLUE, g)
-box("tp_usb", (7, 5, 2.5), (30, 59, 7.7), SHIELD, g)
-box("tp_c1", (4, 3, 1.5), (22, 55, 7.2), BLACK, g)
+g = grp("tp4056")  # charger board standing at the back, USB end down
+box("tp_pcb", (19, 26, 1.6), (73.5, 16, 29.2), BLUE, g)
+box("tp_usb", (7.4, 6, 3), (73.5, 5.5, 28.6), SHIELD, g)
+box("tp_c1", (4, 3, 1.5), (70, 20, 27.8), BLACK, g)
 
-g = grp("boost")  # 5V boost beside cradle
-box("bst_pcb", (22, 14, 3), (72, 60, 5.0), RED, g)
-box("bst_ind", (6, 6, 4), (72, 60, 8.5), BLACK, g)
+g = grp("boost")  # 5V boost standing at the back, beside the charger
+box("bst_pcb", (37, 17, 1.6), (34, 11.5, 29.4), RED, g)
+box("bst_ind", (6, 6, 4), (30, 11.5, 26.8), BLACK, g)
 
-g = grp("cap")  # 470uF cap
-cyl("cap_body", 4, 10, (52, 60, 9.0), BLACK, g)
-cyl("cap_top", 4, 0.6, (52, 60, 14.2), SHIELD, g)
+g = grp("cap")  # 470uF cap lying on the bottom wall at the back
+cyl("cap_body", 4, 11, (58, 6.5, 26.5), BLACK, g,
+    rotation=(0, math.pi / 2, 0))
+cyl("cap_top", 4, 0.6, (64, 6.5, 26.5), SHIELD, g,
+    rotation=(0, math.pi / 2, 0))
 
 g = grp("inserts")  # 4x M3 brass inserts, flush with boss tops
 for bx, by in [(8, 8), (88, 8), (8, 62), (88, 62)]:

@@ -7,12 +7,16 @@ Bambu Studio refused to open. These outputs are true watertight solids.
 
 Design (all mm):
   - Rounded-rectangle "pebble" body, 96 x 70 x 34.5, 2.5 wall, corner r12.
-  - Front face with two raised circular bezels (2.5 proud):
+  - Front face with two flush circular bezels:
       * PIR bezel: outer r17, 24 mm bore, snug for the HC-SR501 Fresnel dome (23 mm)
-      * Camera bezel: outer r10, 12 mm bore for the lens only, plus a
-        separate 8 mm bore for the flash LED (13 mm right, 14 mm below
-        the lens centre, measured from Pappy's board)
-  - USB cable notch in the bottom wall (x 41..55, 5.5 tall, behind front plate).
+      * Camera bezel: outer r10, 13 mm bore for the lens, plus a separate
+        8 mm bore for the flash LED at (51.8, 29.7). Standard Ai-Thinker
+        geometry: on the board the LED centre sits 11.3 mm right and
+        18.2 mm below the lens centre; the board mounts landscape with
+        its antenna end to the RIGHT, which puts the LED 18.2 mm left
+        and 11.3 mm below the lens in case coordinates.
+  - Charger USB notch in the bottom wall (x 66..78, z 26..31, deep —
+    beside the lid, where the TP4056 now stands; see v3.7 below).
   - 4x corner bosses (8 mm) take M3 brass heat-set inserts
     (4.1 mm blind hole, 7 mm deep, lead-in chamfer); use M3x8 screws.
   - Lid: matching rounded back plate, 5 mm, M3 clearance holes with
@@ -51,6 +55,28 @@ v3.6 (2026-10-18): camera bore 20 -> 12 mm (lens only, the big round hole
 was oversized); bezel r14 -> r10; added a separate 8 mm flash LED bore
 at (81, 27) — 13 mm right, 14 mm below the lens centre.
 
+v3.7 (2026-10-20): full fit audit against the STANDARD part dimensions
+(Ai-Thinker datasheet + published module sizes), checked pairwise for
+interference by case/check_fit.py — run it after any layout change.
+  - Flash bore MOVED to (51.8, 29.7). The v3.6 spot came from a photo
+    measurement that does not match the standard board: measured on
+    Ai-Thinker's own front photo and an assembled-board photo, the LED
+    centre is 11.3 right / 18.2 below the lens in board coordinates, so
+    with the board landscape (antenna end right, as ASSEMBLY.md says)
+    the LED lands down-left of the lens. At the old spot the LED sat
+    fully behind solid plastic in that mounting.
+  - Camera centre moved (68, 41) -> (70, 41) so the ESP32-CAM PCB
+    (40.5 long) clears the HC-SR501 PCB (32.5 wide) by 3+ mm.
+  - Camera bore 12 -> 13 mm so the OV2640 lens base (9x9, corner
+    radius 6.4) clears the bore rim.
+  - Power boards get a defined home: TP4056 and MT3608 stand upright
+    at the BACK of the case along the bottom wall (behind the battery),
+    cap lying beside them — the old "tape beside the cradle" left no
+    interference-free spot, and the charger notch could never reach
+    the TP4056 with the cell in place. The front USB notch (x 41..55,
+    blocked by the battery since v3) is removed; the charger notch
+    moves deep (z 26..31) to meet the TP4056's USB port.
+
 Run with the project venv:
   ../.venv/bin/python generate_case.py
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
@@ -70,9 +96,10 @@ W, H, R = 96.0, 70.0, 12.0             # outer silhouette
 WI, HI, RI = 91.0, 65.0, 9.5           # inner cavity (2.5 wall)
 T, D = 2.5, 34.5                       # front plate thickness, body depth
 PIR = (24.0, 41.0)                     # PIR bezel centre (raised 3 mm for cam clearance)
-CAM = (68.0, 41.0)                     # camera bezel centre (raised 3 mm for cam clearance)
-FLASH = (81.0, 27.0)                   # flash LED bore centre: 13 right, 14 below lens
-                                       # (measured from Pappy's board photo, 2026-10-18)
+CAM = (70.0, 41.0)                     # camera bezel centre (moved +2 in v3.7 for PIR clearance)
+FLASH = (51.8, 29.7)                   # flash LED bore centre: LED is 18.2 left, 11.3 below
+                                       # the lens with the board landscape, antenna end right
+                                       # (standard Ai-Thinker geometry, verified 2026-10-20)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]           # lid wall-mount holes
 
@@ -126,13 +153,12 @@ def build_body():
     for bx, by in BOSS:                                      # screw bosses (8 mm, insert-ready)
         body += cyl(4.0, bx, by, T, 31.5)
     body -= cyl(12.0, *PIR, -T - 1, 10.0)                    # PIR bore (24 mm, snug for 23 mm dome)
-    body -= cyl(6.0, *CAM, -T - 1, 10.0)                     # camera bore (12 mm, lens only)
+    body -= cyl(6.5, *CAM, -T - 1, 10.0)                     # camera bore (13 mm, clears the 9x9 lens base)
     body -= cyl(4.0, *FLASH, -T - 1, 10.0)                   # flash LED bore (8 mm)
     for bx, by in BOSS:                                      # M3 insert holes (4.1, blind)
         body -= cyl(2.05, bx, by, 27.0, 8.0)
         body -= Manifold.cylinder(1.5, 2.05, 2.6, circular_segments=96).translate([bx, by, 33.0])  # lead-in funnel
-    body -= box(41.0, -1.0, T, 14.0, T + 1.5, 5.5)           # USB notch, bottom wall
-    body -= box(66.0, -1.0, T, 12.0, T + 1.5, 5.5)           # charger USB notch
+    body -= box(66.0, -1.0, 26.0, 12.0, T + 1.5, 5.0)         # charger USB notch, bottom wall, deep (z 26..31) — meets the TP4056 standing at the back
     body -= box(45.5, 4.0, 0.0, 5.0, 20.0, 2.0)              # zip-tie groove, outer face
     body -= box(46.0, 3.0, 0.0, 4.0, 4.0, T)                # zip-tie slot, -Y side
     body -= box(46.0, 21.0, 0.0, 4.0, 4.0, T)               # zip-tie slot, +Y side
