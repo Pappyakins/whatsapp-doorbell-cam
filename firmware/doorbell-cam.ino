@@ -15,15 +15,19 @@
 // first-flash fallback. Provisioning only starts on a manual power-on
 // when Wi-Fi cannot connect — never on a PIR wake — and gives up after
 // 2 tries so a dead router cannot drain the battery.
+//
+// BLE uses the NimBLE-Arduino library (by h2zero, install it in the
+// Arduino Library Manager) instead of the built in Bluedroid stack.
+// It speaks the same GATT protocol, so the setup app did not need to
+// change. Note the IRAM fix on core 3.3.12 was two parts, this plus
+// dropping HTTPClient in send_photo() below: the Bluetooth controller
+// itself is most of the IRAM cost and both stacks share it.
 
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
-#include <HTTPClient.h>
 #include <Preferences.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
+#include <NimBLEDevice.h>
 #include "esp_mac.h"
 #include "mbedtls/base64.h"
 #include "config.h"
@@ -117,19 +121,19 @@ static void go_to_sleep() {
 RTC_DATA_ATTR static int provTries = 0;  // survives deep sleep + restart
 
 static String pendSsid, pendPass, pendName, pendTo, pendServer, pendToken;
-static BLECharacteristic *provControl = nullptr;
+static NimBLECharacteristic *provControl = nullptr;
 static volatile bool provDone = false;
 
-class ProvFieldCallbacks : public BLECharacteristicCallbacks {
+class ProvFieldCallbacks : public NimBLECharacteristicCallbacks {
   String *slot;
 public:
   ProvFieldCallbacks(String *s) : slot(s) {}
-  void onWrite(BLECharacteristic *c) override { *slot = c->getValue().c_str(); }
+  void onWrite(NimBLECharacteristic *c, NimBLEConnInfo &) override { *slot = c->getValue().c_str(); }
 };
 
-class ProvControlCallbacks : public BLECharacteristicCallbacks {
+class ProvControlCallbacks : public NimBLECharacteristicCallbacks {
 public:
-  void onWrite(BLECharacteristic *c) override {
+  void onWrite(NimBLECharacteristic *c, NimBLEConnInfo &) override {
     String cmd = c->getValue().c_str();
     cmd.trim();
     if (cmd == "APPLY") {
@@ -156,11 +160,11 @@ public:
   }
 };
 
-static BLECharacteristic *prov_field(BLEService *svc, const char *uuid,
-                                     const String &initial, String *slot) {
-  BLECharacteristic *ch = svc->createCharacteristic(
-      uuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
-  ch->setValue(initial.c_str());
+static NimBLECharacteristic *prov_field(NimBLEService *svc, const char *uuid,
+                                        const String &initial, String *slot) {
+  NimBLECharacteristic *ch = svc->createCharacteristic(
+      uuid, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
+  ch->setValue(std::string(initial.c_str()));
   *slot = initial;
   ch->setCallbacks(new ProvFieldCallbacks(slot));
   return ch;
@@ -182,10 +186,10 @@ static void run_provisioning() {
   snprintf(suffix, sizeof(suffix), "%02X%02X", mac[4], mac[5]);
   advName += suffix;
 
-  BLEDevice::setMTU(517);  // values (URL, token) exceed the 23-byte default MTU
-  BLEDevice::init(advName.c_str());
-  BLEServer *server = BLEDevice::createServer();
-  BLEService *svc = server->createService(PROV_SERVICE_UUID);
+  NimBLEDevice::setMTU(517);  // values (URL, token) exceed the 23-byte default MTU
+  NimBLEDevice::init(advName.c_str());
+  NimBLEServer *server = NimBLEDevice::createServer();
+  NimBLEService *svc = server->createService(PROV_SERVICE_UUID);
   prov_field(svc, PROV_SSID_UUID, cfgSsid, &pendSsid);
   prov_field(svc, PROV_PASS_UUID, "", &pendPass);          // never echo the password back
   prov_field(svc, PROV_NAME_UUID, cfgName, &pendName);
@@ -193,14 +197,14 @@ static void run_provisioning() {
   prov_field(svc, PROV_SERVER_UUID, cfgServer, &pendServer);
   prov_field(svc, PROV_TOKEN_UUID, cfgToken, &pendToken);
   provControl = svc->createCharacteristic(
-      PROV_CONTROL_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+      PROV_CONTROL_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
   provControl->setValue("ready");
   provControl->setCallbacks(new ProvControlCallbacks());
-  svc->start();
-  BLEAdvertising *adv = BLEDevice::getAdvertising();
+  NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
+  adv->setName(advName.c_str());
   adv->addServiceUUID(PROV_SERVICE_UUID);
-  adv->setScanResponse(true);
-  BLEDevice::startAdvertising();
+  adv->enableScanResponse(true);
+  adv->start();
 
   unsigned long t0 = millis();
   while (!provDone && millis() - t0 < PROV_WINDOW_MS) {
@@ -209,7 +213,7 @@ static void run_provisioning() {
     digitalWrite(FLASH_GPIO, LOW);
     delay(940);
   }
-  BLEDevice::deinit(true);
+  NimBLEDevice::deinit(true);
   if (provDone) {
     delay(300);  // let the app read the final status
     ESP.restart();
@@ -289,23 +293,72 @@ static bool send_photo(const String &b64photo) {
   Serial.print("wifi ok, rssi ");
   Serial.println(WiFi.RSSI());
 
-  WiFiClientSecure secureClient;
-  secureClient.setInsecure();
-  HTTPClient http;
-  if (cfgServer.startsWith("https://")) {
-    http.begin(secureClient, cfgServer);       // e.g. https://rserver.beagle-sunfish.ts.net/api/doorbell-photo
-  } else {
-    http.begin(cfgServer);                     // e.g. http://192.168.2.139:8099/api/doorbell-photo
-  }
-  http.addHeader("Content-Type", "application/json");
-  http.setTimeout(15000);
+  // POST the photo with a hand-written HTTP request instead of the
+  // HTTPClient library. HTTPClient pulls libc time functions
+  // (strptime/mktime/tzset) into IRAM, and with BLE also linked that
+  // overflowed iram0_0_seg on ESP32 core 3.3.12. Same JSON, same
+  // server, same response code check.
   String body = "{\"token\":\"" + cfgToken + "\",\"name\":\"" + cfgName + "\",\"to\":\"" + cfgTo + "\",\"photo\":\"" + b64photo + "\"}";
-  int code = http.POST(body);
+
+  bool secure = cfgServer.startsWith("https://");
+  String rest = cfgServer.substring(secure ? 8 : 7);  // after the scheme
+  int slash = rest.indexOf('/');
+  String hostport = (slash >= 0) ? rest.substring(0, slash) : rest;
+  String path = (slash >= 0) ? rest.substring(slash) : String("/");
+  String host = hostport;
+  int port = secure ? 443 : 80;
+  int colon = hostport.indexOf(':');
+  if (colon >= 0) {
+    host = hostport.substring(0, colon);
+    port = hostport.substring(colon + 1).toInt();
+  }
+
+  WiFiClientSecure secureClient;
+  WiFiClient plainClient;
+  Client *client = nullptr;
+  if (secure) {
+    secureClient.setInsecure();
+    client = &secureClient;
+  } else {
+    client = &plainClient;
+  }
+  client->setTimeout(15000);
+  if (!client->connect(host.c_str(), port)) {
+    Serial.println("server connect failed");
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    return false;
+  }
+  String header = "POST " + path + " HTTP/1.1\r\nHost: " + hostport +
+                  "\r\nContent-Type: application/json\r\nContent-Length: " +
+                  String(body.length()) + "\r\nConnection: close\r\n\r\n";
+  client->print(header);
+  const uint8_t *p = (const uint8_t *)body.c_str();
+  size_t remaining = body.length();
+  while (remaining > 0) {
+    size_t w = client->write(p, remaining);
+    if (w == 0) break;
+    p += w;
+    remaining -= w;
+  }
+
+  t0 = millis();
+  while (!client->available() && millis() - t0 < 15000) delay(10);
+  String line = client->readStringUntil('\n');  // "HTTP/1.1 200 OK"
+  int code = 0;
+  int sp1 = line.indexOf(' ');
+  if (sp1 >= 0) code = line.substring(sp1 + 1, sp1 + 4).toInt();
   Serial.print("POST -> ");
   Serial.println(code);
-  String resp = http.getString();
-  Serial.println(resp);
-  http.end();
+  String resp;
+  t0 = millis();
+  while ((client->connected() || client->available()) && millis() - t0 < 3000) {
+    while (client->available()) resp += (char)client->read();
+    delay(10);
+  }
+  int bodyAt = resp.indexOf("\r\n\r\n");
+  Serial.println(bodyAt >= 0 ? resp.substring(bodyAt + 4) : resp);
+  client->stop();
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   return code == 200;

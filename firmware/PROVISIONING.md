@@ -1,5 +1,12 @@
 # BLE provisioning protocol
 
+**Building the firmware:** install the **NimBLE-Arduino** library (by
+h2zero) in the Arduino Library Manager first. The firmware uses NimBLE
+instead of the built in Bluedroid BLE stack, and `send_photo()` writes
+its HTTPS POST by hand instead of using HTTPClient — together those
+two changes keep the build inside the ESP32 IRAM limit on core 3.3.12
+(Bluedroid + HTTPClient overflowed `iram0_0_seg` by about 4 KB).
+
 The setup app is the **JakinsCraft ESP Cam Setup** PWA (Chrome on Android,
 Web Bluetooth): https://pappyakins.github.io/esp-cam-setup/ — source:
 Pappyakins/esp-cam-setup. The protocol below is what it speaks.
