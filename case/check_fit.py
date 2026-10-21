@@ -87,9 +87,9 @@ def main():
         if overlaps(a, b):
             print(f"CLASH: {na} {a}  x  {nb} {b}")
             bad += 1
-    # flash LED must sit fully inside the flash bore footprint (58.8, 33.1) r4
+    # flash LED must sit fully inside the flash bore footprint (58.8, 35.1) r6
     led = PARTS["esp_led"]
-    cx, cy, r = 58.8, 33.1, 4.0
+    cx, cy, r = 58.8, 35.1, 6.0
     if not (led[0] >= cx - r and led[1] <= cx + r
             and led[2] >= cy - r and led[3] <= cy + r):
         print("FLASH: LED footprint not fully inside the bore")

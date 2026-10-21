@@ -11,11 +11,12 @@ Design (all mm):
       * PIR bezel: outer r17, 23 mm bore (Pappy's spec, 2026-10-21 —
         line-to-line with the 23 mm HC-SR501 Fresnel dome, a snug grip)
       * Camera bezel: outer r10, 8 mm bore for the lens barrel, plus a
-        separate 8 mm bore for the flash LED at (58.8, 33.1). The board
+        separate 12 mm bore for the flash LED at (58.8, 35.1). The board
         mounts UPRIGHT, antenna at the TOP, never on its side (Pappy's
         checks against his own board, 2026-10-21): on his board the LED
-        centre sits 11.2 mm LEFT and 20.9 mm below the lens centre
-        (fine-tuned v3.10 from the first printed case).
+        centre sits 11.2 mm LEFT and 20.9 mm below the lens centre; the
+        bore is centred 2 mm higher (18.9 below) and opened to 12 mm at
+        his call in v3.13, so the LED sits well inside it.
         The camera sits high on the face (centre y=54) so the upright
         board's bottom end clears the battery bay — at y=41 it would
         foul the cell's shoulder.
@@ -115,6 +116,12 @@ v3.12 (2026-10-21): v3.11 test-fitted, the 20.9 mm vertical was
   -> (58.8, 33.1), i.e. 11.2 LEFT / 20.9 below the lens — sideways
   lands almost back at the v3.9 spot; the real fix was the vertical.
 
+v3.13 (2026-10-21): Pappy's call from the v3.12 print in hand: flash
+  bore opened 8 -> 12 mm and moved 2 mm up toward the camera, (58.8,
+  33.1) -> (58.8, 35.1), i.e. 11.2 LEFT / 18.9 below the lens. The LED
+  itself has not moved; the bigger, higher bore gives it clear room.
+  Everything else unchanged.
+
 Run with the project venv:
   ../.venv/bin/python generate_case.py
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
@@ -136,9 +143,10 @@ T, D = 2.5, 34.5                       # front plate thickness, body depth
 PIR = (24.0, 41.0)                     # PIR bezel centre (raised 3 mm for cam clearance)
 CAM = (70.0, 54.0)                     # camera bezel centre (high on the face: the upright
                                        # board's bottom end must clear the battery bay)
-FLASH = (58.8, 33.1)                   # flash LED bore centre: 11.2 LEFT, 20.9 below the
-                                       # lens, board upright, antenna at the top
-                                       # (Pappy's own board check, 2026-10-21)
+FLASH = (58.8, 35.1)                   # flash LED bore centre (Ø12 since v3.13): 11.2 LEFT,
+                                       # 18.9 below the lens, board upright, antenna at
+                                       # the top (the LED centre itself sits 20.9 below
+                                       # the lens; Pappy's own board check, 2026-10-21)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]           # lid wall-mount holes
 
@@ -193,7 +201,7 @@ def build_body():
         body += cyl(4.0, bx, by, T, 31.5)
     body -= cyl(11.5, *PIR, -T - 1, 10.0)                    # PIR bore (23 mm, line-to-line with the dome)
     body -= cyl(4.0, *CAM, -T - 1, 10.0)                     # camera bore (8 mm, lens barrel; base seats on the plate)
-    body -= cyl(4.0, *FLASH, -T - 1, 10.0)                   # flash LED bore (8 mm)
+    body -= cyl(6.0, *FLASH, -T - 1, 10.0)                   # flash LED bore (12 mm)
     for bx, by in BOSS:                                      # M3 insert holes (4.1, blind)
         body -= cyl(2.05, bx, by, 27.0, 8.0)
         body -= Manifold.cylinder(1.5, 2.05, 2.6, circular_segments=96).translate([bx, by, 33.0])  # lead-in funnel

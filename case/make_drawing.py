@@ -25,7 +25,7 @@ LIGHT = "#e8ecf3"
 
 PIR = (24.0, 41.0)
 CAM = (70.0, 54.0)
-FLASH = (58.8, 33.1)
+FLASH = (58.8, 35.1)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]
 
@@ -98,7 +98,7 @@ for (x, y, r_out, r_bore) in ((*PIR, 17, 11.5), (*CAM, 10, 4)):
     ax.add_patch(Circle((x, y), r_out, fill=False, lw=1.6, edgecolor=NAVY))
     ax.add_patch(Circle((x, y), r_bore, fill=False, lw=1.6, edgecolor=NAVY))
     centre_mark(ax, x, y, 3.5)
-ax.add_patch(Circle(FLASH, 4.0, fill=False, lw=1.6, edgecolor=NAVY))
+ax.add_patch(Circle(FLASH, 6.0, fill=False, lw=1.6, edgecolor=NAVY))
 centre_mark(ax, *FLASH, 3.0)
 for bx, by in BOSS:  # behind the front plate -> dashed
     ax.add_patch(Circle((bx, by), 4.0, fill=False, lw=0.9,
@@ -130,7 +130,7 @@ leader(ax, (PIR[0] - 12, PIR[1] + 13), (-16, 63),
 leader(ax, (CAM[0] + 10, CAM[1] + 11), (72, 72),
        "Camera bezel Ø20, bore Ø8\n(lens barrel)")
 leader(ax, FLASH, (33, 24),
-       "Flash bore Ø8, LED here:\nboard upright, antenna UP")
+       "Flash bore Ø12, LED here:\nboard upright, antenna UP")
 leader(ax, (12, 6), (38, -13),
        "4× bosses Ø8 (dashed),\nØ4.1 insert holes behind plate")
 
@@ -228,7 +228,7 @@ ax.set_aspect("equal"); ax.axis("off")
 ax.set_xlim(-14, 150); ax.set_ylim(-18, 96)
 ax.text(62, 93, "EXPLODED VIEW (schematic, front → back)", fontsize=9,
         weight="bold", color=NAVY, ha="center")
-ax.text(62, 88.5, "lens and flash face Ø8 bores · PIR dome faces the Ø23 bore",
+ax.text(62, 88.5, "lens faces an Ø8 bore, flash an Ø12 bore · PIR dome faces the Ø23 bore",
         fontsize=7.5, color=NAVY, ha="center")
 
 
@@ -286,7 +286,7 @@ steps = (
     "   470 µF across 5V/GND, close to the ESP32-CAM.\n"
     "5. Seat the PIR dome in the Ø23 bore, ESP32-CAM lens\n"
     "   in the Ø8 bore (board UPRIGHT, antenna UP, so the\n"
-    "   flash LED meets its Ø8 bore). VHB tape/hot glue.\n"
+    "   flash LED meets its Ø12 bore). VHB tape/hot glue.\n"
     "6. Lay the 18650 in the cradle; zip tie up through one\n"
     "   floor slot, over the cell, down the other slot.\n"
     "7. Stand TP4056 + boost upright at the back, along\n"
