@@ -10,11 +10,13 @@ Part sizes are the STANDARD published dimensions:
     lens centre 13.5 across, 11.5 down from the board's top edge
     flash LED centre 24.8 across, 29.8 down (measured on the official
     Ai-Thinker front photo and an assembled-board photo, Oct 2026)
-    -> LED sits 11.3 right / 18.2 below the lens in board coordinates.
-    Board mounted UPRIGHT, antenna at the TOP (Pappy's own board check,
-    2026-10-21), so the LED stays right / below the lens in case
-    coordinates too. Camera centre (70, 54): the upright board's bottom
-    end reaches 29 mm below the lens and must clear the battery bay.
+    -> on the stock board the LED measures 11.3 right / 18.2 below the
+    lens, but on PAPPY'S board it sits to the LEFT (his check against
+    the physical board, 2026-10-21 — his board wins). Board mounted
+    UPRIGHT, antenna at the TOP, so in case coordinates the LED is
+    11.3 LEFT / 18.2 BELOW the lens. Camera centre (70, 54): the
+    upright board's bottom end reaches 29 mm below the lens and must
+    clear the battery bay.
   HC-SR501 PIR                      PCB 32.5 x 24.5, dome dia 23, ~10 tall
   TP4056 module (protected, uUSB)   ~26 x 17.5 (clones vary +/-2)
   MT3608 boost module               ~36 x 17 (clones vary +/-1)
@@ -38,7 +40,7 @@ PARTS = {
     "esp_shield":   (61.0, 79.0, 33.5, 53.5, 6.1, 9.5),   # ESP32 can, back side
     "esp_pins_L":   (56.8, 58.8, 28.5, 60.5, 6.1, 14.5),  # worst case: headers
     "esp_pins_R":   (81.2, 83.2, 28.5, 60.5, 6.1, 14.5),  #   soldered both rows
-    "esp_led":      (79.1, 83.5, 33.6, 38.0, 3.5, 4.5),   # flash LED, front face
+    "esp_led":      (56.5, 60.9, 33.6, 38.0, 3.5, 4.5),   # flash LED, front face (left of lens)
     # --- 18650 in its bay (intentional contact with saddles/stops excluded)
     "battery":      (14.0, 82.0, 4.6, 23.4, 2.6, 21.4),
     # --- power boards standing at the back, bottom zone, faces toward cell
@@ -83,9 +85,9 @@ def main():
         if overlaps(a, b):
             print(f"CLASH: {na} {a}  x  {nb} {b}")
             bad += 1
-    # flash LED must sit fully inside the flash bore footprint (81.3, 35.8) r4
+    # flash LED must sit fully inside the flash bore footprint (58.7, 35.8) r4
     led = PARTS["esp_led"]
-    cx, cy, r = 81.3, 35.8, 4.0
+    cx, cy, r = 58.7, 35.8, 4.0
     if not (led[0] >= cx - r and led[1] <= cx + r
             and led[2] >= cy - r and led[3] <= cy + r):
         print("FLASH: LED footprint not fully inside the bore")

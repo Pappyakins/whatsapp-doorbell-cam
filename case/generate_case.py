@@ -11,12 +11,13 @@ Design (all mm):
       * PIR bezel: outer r17, 23 mm bore (Pappy's spec, 2026-10-21 —
         line-to-line with the 23 mm HC-SR501 Fresnel dome, a snug grip)
       * Camera bezel: outer r10, 8 mm bore for the lens barrel, plus a
-        separate 8 mm bore for the flash LED at (81.3, 35.8). The board
-        mounts UPRIGHT, antenna at the TOP (Pappy's check against his
-        own board, 2026-10-21): the LED centre sits 11.3 mm right and
-        18.2 mm below the lens centre. The camera sits high on the face
-        (centre y=54) so the upright board's bottom end clears the
-        battery bay — at y=41 it would foul the cell's shoulder.
+        separate 8 mm bore for the flash LED at (58.7, 35.8). The board
+        mounts UPRIGHT, antenna at the TOP, never on its side (Pappy's
+        checks against his own board, 2026-10-21): on his board the LED
+        centre sits 11.3 mm LEFT and 18.2 mm below the lens centre.
+        The camera sits high on the face (centre y=54) so the upright
+        board's bottom end clears the battery bay — at y=41 it would
+        foul the cell's shoulder.
   - Charger USB notch in the bottom wall (x 66..78, z 26..31, deep —
     beside the lid, where the TP4056 now stands; see v3.7 below).
   - 4x corner bosses (8 mm) take M3 brass heat-set inserts
@@ -89,6 +90,12 @@ v3.8 (2026-10-21): Pappy's corrections, checked against his own board.
     now seats flat against the plate and only the barrel enters).
   - PIR bore 24 -> 23 mm (his spec: line-to-line with the dome).
 
+v3.9 (2026-10-21): Pappy corrected the flash side once more, board in
+  hand: the flash is to the LEFT of the lens (not the right as the
+  stock photos suggested — his physical board wins). Flash bore
+  (81.3, 35.8) -> (58.7, 35.8). Board stays upright, antenna up;
+  camera stays at (70, 54).
+
 Run with the project venv:
   ../.venv/bin/python generate_case.py
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
@@ -110,7 +117,7 @@ T, D = 2.5, 34.5                       # front plate thickness, body depth
 PIR = (24.0, 41.0)                     # PIR bezel centre (raised 3 mm for cam clearance)
 CAM = (70.0, 54.0)                     # camera bezel centre (high on the face: the upright
                                        # board's bottom end must clear the battery bay)
-FLASH = (81.3, 35.8)                   # flash LED bore centre: 11.3 right, 18.2 below the
+FLASH = (58.7, 35.8)                   # flash LED bore centre: 11.3 LEFT, 18.2 below the
                                        # lens, board upright, antenna at the top
                                        # (Pappy's own board check, 2026-10-21)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]

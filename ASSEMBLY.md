@@ -73,7 +73,7 @@ boost OUT− (GND) → common ground
 ## 6. Mount the boards in the body
 
 - **ESP32-CAM:** lens centred in the 8 mm bore, **board UPRIGHT with
-  the antenna at the TOP**. The flash LED sits below and to the right
+  the antenna at the TOP**. The flash LED sits below and to the left
   of the lens in this mounting, exactly behind the separate 8 mm flash
   bore. The square lens base seats flat against the plate and only the
   barrel enters the bore, so fix with thin tape or a dab of hot glue —

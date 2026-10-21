@@ -25,7 +25,7 @@ LIGHT = "#e8ecf3"
 
 PIR = (24.0, 41.0)
 CAM = (70.0, 54.0)
-FLASH = (81.3, 35.8)
+FLASH = (58.7, 35.8)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]
 
@@ -129,8 +129,8 @@ leader(ax, (PIR[0] - 12, PIR[1] + 13), (-16, 63),
        "PIR bezel Ø34, bore Ø23\n(HC-SR501 dome Ø23)")
 leader(ax, (CAM[0] + 10, CAM[1] + 11), (72, 72),
        "Camera bezel Ø20, bore Ø8\n(lens barrel)")
-leader(ax, FLASH, (74, 58),
-       "Flash bore Ø8 — LED lands here,\nboard upright, antenna UP")
+leader(ax, FLASH, (33, 24),
+       "Flash bore Ø8, LED here:\nboard upright, antenna UP")
 leader(ax, (12, 6), (38, -13),
        "4× bosses Ø8 (dashed),\nØ4.1 insert holes behind plate")
 
