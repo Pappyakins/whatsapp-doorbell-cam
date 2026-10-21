@@ -17,16 +17,18 @@ stored in the NVS namespace `doorcfg` and override `config.h`.
 
 ## When the camera listens
 
-Provisioning starts only when ALL of these are true:
+Provisioning starts on EVERY manual power-on boot (never on a PIR
+wake). The setup window opens first, before the boot photo: it
+advertises for 5 minutes, blinking the flash LED once a second. If
+the app saves or erases settings, the camera restarts immediately
+onto the new settings. If nobody connects in the 5 minutes, the cam
+carries on with its normal boot photo and send, then sleeps.
 
-- the boot is a manual power-on (not a PIR wake),
-- sending the power-on photo failed (Wi-Fi could not connect),
-- fewer than 2 provisioning attempts since the last successful Wi-Fi
-  connection (RTC counter, so a dead router cannot drain the battery).
-
-It advertises for 5 minutes, blinking the flash LED once a second,
-then gives up and goes back to deep sleep. A save or erase from the
-app restarts the camera immediately.
+Changed 2026-10-21 at Pappy's direction: entering setup must not
+depend on Wi-Fi failing (the old rule also capped attempts at 2,
+which made a working camera nearly impossible to reconfigure away
+from home). A physical setup button is planned as a later addition
+and will trigger this same window.
 
 ## Device identity
 

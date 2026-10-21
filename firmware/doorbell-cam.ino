@@ -12,9 +12,13 @@
 // Setup app: settings can also be written over Bluetooth by the
 // JakinsCraft ESP Setup app (see PROVISIONING.md). Values stored by the
 // app live in NVS flash and OVERRIDE config.h; config.h stays as the
-// first-flash fallback. Provisioning only starts on a manual power-on
-// when Wi-Fi cannot connect — never on a PIR wake — and gives up after
-// 2 tries so a dead router cannot drain the battery.
+// first-flash fallback. Provisioning starts on EVERY manual power-on:
+// the BLE setup window (5 minutes, flash blinking) opens first, and if
+// nobody saves new settings in that time the cam carries on with its
+// normal boot photo and send. It never opens on a PIR wake, so field
+// battery use is unaffected. (Pappy's call, 2026-10-21: entering setup
+// must not depend on Wi-Fi failing. A physical setup button comes
+// later and will trigger the same window.)
 //
 // BLE uses the NimBLE-Arduino library (by h2zero, install it in the
 // Arduino Library Manager) instead of the built in Bluedroid stack.
@@ -115,10 +119,7 @@ static void go_to_sleep() {
 #define PROV_SERVER_UUID   "8d4f0006-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_TOKEN_UUID    "8d4f0007-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_CONTROL_UUID  "8d4f0008-3c2a-4b5e-9f1a-2b3c4d5e6f70"
-#define PROV_WINDOW_MS     300000    // 5 minutes, then give up and sleep
-#define PROV_MAX_TRIES     2
-
-RTC_DATA_ATTR static int provTries = 0;  // survives deep sleep + restart
+#define PROV_WINDOW_MS     300000    // 5 minutes, then carry on as normal
 
 static String pendSsid, pendPass, pendName, pendTo, pendServer, pendToken;
 static NimBLECharacteristic *provControl = nullptr;
@@ -170,8 +171,9 @@ static NimBLECharacteristic *prov_field(NimBLEService *svc, const char *uuid,
   return ch;
 }
 
-// Run BLE setup mode for up to PROV_WINDOW_MS. Returns when settings were
-// applied/erased (caller restarts) or the window timed out (caller sleeps).
+// Run BLE setup mode for up to PROV_WINDOW_MS. Restarts the cam itself
+// when settings were applied/erased; returns on window timeout and the
+// caller carries on with the normal boot flow.
 static void run_provisioning() {
   Serial.println("provisioning: BLE setup mode");
   WiFi.disconnect(true);
@@ -289,7 +291,6 @@ static bool send_photo(const String &b64photo) {
     Serial.println("wifi failed");
     return false;
   }
-  provTries = 0;  // Wi-Fi works — reset the provisioning try counter
   Serial.print("wifi ok, rssi ");
   Serial.println(WiFi.RSSI());
 
@@ -379,6 +380,14 @@ void setup() {
     go_to_sleep();  // woke for another reason — back to sleep
   }
 
+  if (g_powerOn) {
+    // Manual power-on: always open the BLE setup window first. If the
+    // app saves or erases settings the cam restarts inside
+    // run_provisioning(); if the window times out untouched we fall
+    // through to the normal boot photo + send below.
+    run_provisioning();
+  }
+
   if (!init_camera()) {
     Serial.println("camera init failed");
     go_to_sleep();
@@ -404,13 +413,9 @@ void setup() {
     digitalWrite(FLASH_GPIO, HIGH);
     delay(250);
     digitalWrite(FLASH_GPIO, LOW);
-  } else if (g_powerOn && provTries < PROV_MAX_TRIES) {
-    // Manual power-on and Wi-Fi failed: offer BLE setup (bounded tries,
-    // so a router outage on battery can't loop forever). Restarts itself
-    // if the app saves or erases; on timeout we fall through to sleep.
-    provTries++;
-    run_provisioning();
   }
+  // A failed send just sleeps now: setup mode already ran at boot on
+  // manual power-ons, and PIR wakes never offer it.
   go_to_sleep();
 }
 
