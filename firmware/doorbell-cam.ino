@@ -188,8 +188,13 @@ static void run_provisioning() {
   snprintf(suffix, sizeof(suffix), "%02X%02X", mac[4], mac[5]);
   advName += suffix;
 
-  NimBLEDevice::setMTU(517);  // values (URL, token) exceed the 23-byte default MTU
+  // ORDER MATTERS: init() first, setMTU() second. setMTU() calls the
+  // NimBLE host stack directly (ble_att_set_preferred_mtu), and before
+  // init() the host mutexes do not exist yet — calling it first crashed
+  // the cam with "assert failed: npl_freertos_mutex_pend (mu->handle)"
+  // the instant provisioning started (field log, 2026-10-21).
   NimBLEDevice::init(advName.c_str());
+  NimBLEDevice::setMTU(517);  // values (URL, token) exceed the 23-byte default MTU
   NimBLEServer *server = NimBLEDevice::createServer();
   NimBLEService *svc = server->createService(PROV_SERVICE_UUID);
   prov_field(svc, PROV_SSID_UUID, cfgSsid, &pendSsid);
