@@ -121,14 +121,14 @@ BASE_Z[lid] = 0.0
 G["lid"] = [lid]
 
 # -------------------------------------------------------- components ---
-g = grp("esp")  # ESP32-CAM at (70,41), long side horizontal, antenna end right
-box("esp_pcb", (40.5, 27, 1.6), (70, 41, 6.8), GREEN, g)
-box("esp_shield", (18, 20, 3), (60, 41, 9.1), SHIELD, g)
-box("esp_cam", (12, 12, 4), (70, 41, 9.6), BLACK, g)
-cyl("esp_lens", 4, 2.5, (70, 41, 12.8), GLASS, g)
-box("esp_flash", (3, 2, 1), (51.8, 29.7, 9.0), WHITE, g)
-box("esp_c1", (4, 3, 1.5), (84, 32, 8.6), BLACK, g)
-box("esp_c2", (3, 3, 1.5), (54, 50, 8.6), BLACK, g)
+g = grp("esp")  # ESP32-CAM at (70,54), upright, antenna at the top
+box("esp_pcb", (27, 40.5, 1.6), (70, 54, 6.8), GREEN, g)
+box("esp_shield", (18, 20, 3), (70, 43.5, 9.1), SHIELD, g)
+box("esp_cam", (12, 12, 4), (70, 54, 9.6), BLACK, g)
+cyl("esp_lens", 4, 2.5, (70, 54, 12.8), GLASS, g)
+box("esp_flash", (3, 2, 1), (81.3, 35.8, 9.0), WHITE, g)
+box("esp_c1", (4, 3, 1.5), (62, 30, 8.6), BLACK, g)
+box("esp_c2", (3, 3, 1.5), (80, 62, 8.6), BLACK, g)
 
 g = grp("pir")  # HC-SR501 at (24,41), PCB ~10 deep (dome height)
 box("pir_pcb", (32, 24, 1.6), (24, 41, 10.8), BLUE, g)

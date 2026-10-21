@@ -11,8 +11,10 @@ Part sizes are the STANDARD published dimensions:
     flash LED centre 24.8 across, 29.8 down (measured on the official
     Ai-Thinker front photo and an assembled-board photo, Oct 2026)
     -> LED sits 11.3 right / 18.2 below the lens in board coordinates.
-    Board mounted landscape, antenna end to the RIGHT, so in case
-    coordinates the LED lands 18.2 LEFT / 11.3 BELOW the lens.
+    Board mounted UPRIGHT, antenna at the TOP (Pappy's own board check,
+    2026-10-21), so the LED stays right / below the lens in case
+    coordinates too. Camera centre (70, 54): the upright board's bottom
+    end reaches 29 mm below the lens and must clear the battery bay.
   HC-SR501 PIR                      PCB 32.5 x 24.5, dome dia 23, ~10 tall
   TP4056 module (protected, uUSB)   ~26 x 17.5 (clones vary +/-2)
   MT3608 boost module               ~36 x 17 (clones vary +/-1)
@@ -31,12 +33,12 @@ PARTS = {
     "pir_pot_L":    (11.0, 16.0, 48.0, 53.0, 11.6, 16.6),
     "pir_pot_R":    (32.0, 37.0, 48.0, 53.0, 11.6, 16.6),
     "pir_header":   (21.0, 27.0, 29.0, 32.0, 11.6, 14.0),
-    # --- ESP32-CAM, landscape, antenna end right, lens at (70, 41)
-    "esp_pcb":      (41.0, 81.5, 27.5, 54.5, 4.5, 6.1),
-    "esp_shield":   (49.5, 69.5, 32.0, 50.0, 6.1, 9.5),   # ESP32 can, back side
-    "esp_pins_bot": (46.5, 78.5, 28.2, 29.8, 6.1, 14.5),  # worst case: headers
-    "esp_pins_top": (46.5, 78.5, 52.2, 53.8, 6.1, 14.5),  #   soldered both rows
-    "esp_led":      (49.2, 54.2, 27.2, 32.2, 3.5, 4.5),   # flash LED, front face
+    # --- ESP32-CAM, upright, antenna at the top, lens at (70, 54)
+    "esp_pcb":      (56.5, 83.5, 25.0, 65.5, 4.5, 6.1),
+    "esp_shield":   (61.0, 79.0, 33.5, 53.5, 6.1, 9.5),   # ESP32 can, back side
+    "esp_pins_L":   (56.8, 58.8, 28.5, 60.5, 6.1, 14.5),  # worst case: headers
+    "esp_pins_R":   (81.2, 83.2, 28.5, 60.5, 6.1, 14.5),  #   soldered both rows
+    "esp_led":      (79.1, 83.5, 33.6, 38.0, 3.5, 4.5),   # flash LED, front face
     # --- 18650 in its bay (intentional contact with saddles/stops excluded)
     "battery":      (14.0, 82.0, 4.6, 23.4, 2.6, 21.4),
     # --- power boards standing at the back, bottom zone, faces toward cell
@@ -81,9 +83,9 @@ def main():
         if overlaps(a, b):
             print(f"CLASH: {na} {a}  x  {nb} {b}")
             bad += 1
-    # flash LED must sit fully inside the flash bore footprint (51.8, 29.7) r4
+    # flash LED must sit fully inside the flash bore footprint (81.3, 35.8) r4
     led = PARTS["esp_led"]
-    cx, cy, r = 51.8, 29.7, 4.0
+    cx, cy, r = 81.3, 35.8, 4.0
     if not (led[0] >= cx - r and led[1] <= cx + r
             and led[2] >= cy - r and led[3] <= cy + r):
         print("FLASH: LED footprint not fully inside the bore")

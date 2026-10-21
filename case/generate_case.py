@@ -8,13 +8,15 @@ Bambu Studio refused to open. These outputs are true watertight solids.
 Design (all mm):
   - Rounded-rectangle "pebble" body, 96 x 70 x 34.5, 2.5 wall, corner r12.
   - Front face with two flush circular bezels:
-      * PIR bezel: outer r17, 24 mm bore, snug for the HC-SR501 Fresnel dome (23 mm)
-      * Camera bezel: outer r10, 13 mm bore for the lens, plus a separate
-        8 mm bore for the flash LED at (51.8, 29.7). Standard Ai-Thinker
-        geometry: on the board the LED centre sits 11.3 mm right and
-        18.2 mm below the lens centre; the board mounts landscape with
-        its antenna end to the RIGHT, which puts the LED 18.2 mm left
-        and 11.3 mm below the lens in case coordinates.
+      * PIR bezel: outer r17, 23 mm bore (Pappy's spec, 2026-10-21 —
+        line-to-line with the 23 mm HC-SR501 Fresnel dome, a snug grip)
+      * Camera bezel: outer r10, 8 mm bore for the lens barrel, plus a
+        separate 8 mm bore for the flash LED at (81.3, 35.8). The board
+        mounts UPRIGHT, antenna at the TOP (Pappy's check against his
+        own board, 2026-10-21): the LED centre sits 11.3 mm right and
+        18.2 mm below the lens centre. The camera sits high on the face
+        (centre y=54) so the upright board's bottom end clears the
+        battery bay — at y=41 it would foul the cell's shoulder.
   - Charger USB notch in the bottom wall (x 66..78, z 26..31, deep —
     beside the lid, where the TP4056 now stands; see v3.7 below).
   - 4x corner bosses (8 mm) take M3 brass heat-set inserts
@@ -77,6 +79,16 @@ interference by case/check_fit.py — run it after any layout change.
     blocked by the battery since v3) is removed; the charger notch
     moves deep (z 26..31) to meet the TP4056's USB port.
 
+v3.8 (2026-10-21): Pappy's corrections, checked against his own board.
+  - Board mounting is UPRIGHT (antenna top), not landscape: the flash
+    LED sits right of the lens and below it, so the flash bore moves
+    (51.8, 29.7) -> (81.3, 35.8). Camera centre (70, 41) -> (70, 54)
+    so the upright board's bottom end (29 mm below the lens) clears
+    the battery bay.
+  - Camera bore 13 -> 8 mm (same as the flash bore; the 9x9 lens base
+    now seats flat against the plate and only the barrel enters).
+  - PIR bore 24 -> 23 mm (his spec: line-to-line with the dome).
+
 Run with the project venv:
   ../.venv/bin/python generate_case.py
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
@@ -96,10 +108,11 @@ W, H, R = 96.0, 70.0, 12.0             # outer silhouette
 WI, HI, RI = 91.0, 65.0, 9.5           # inner cavity (2.5 wall)
 T, D = 2.5, 34.5                       # front plate thickness, body depth
 PIR = (24.0, 41.0)                     # PIR bezel centre (raised 3 mm for cam clearance)
-CAM = (70.0, 41.0)                     # camera bezel centre (moved +2 in v3.7 for PIR clearance)
-FLASH = (51.8, 29.7)                   # flash LED bore centre: LED is 18.2 left, 11.3 below
-                                       # the lens with the board landscape, antenna end right
-                                       # (standard Ai-Thinker geometry, verified 2026-10-20)
+CAM = (70.0, 54.0)                     # camera bezel centre (high on the face: the upright
+                                       # board's bottom end must clear the battery bay)
+FLASH = (81.3, 35.8)                   # flash LED bore centre: 11.3 right, 18.2 below the
+                                       # lens, board upright, antenna at the top
+                                       # (Pappy's own board check, 2026-10-21)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]           # lid wall-mount holes
 
@@ -152,8 +165,8 @@ def build_body():
     body += cyl(10.0, *CAM, 0.0, T)                           # camera bezel ring (flush)
     for bx, by in BOSS:                                      # screw bosses (8 mm, insert-ready)
         body += cyl(4.0, bx, by, T, 31.5)
-    body -= cyl(12.0, *PIR, -T - 1, 10.0)                    # PIR bore (24 mm, snug for 23 mm dome)
-    body -= cyl(6.5, *CAM, -T - 1, 10.0)                     # camera bore (13 mm, clears the 9x9 lens base)
+    body -= cyl(11.5, *PIR, -T - 1, 10.0)                    # PIR bore (23 mm, line-to-line with the dome)
+    body -= cyl(4.0, *CAM, -T - 1, 10.0)                     # camera bore (8 mm, lens barrel; base seats on the plate)
     body -= cyl(4.0, *FLASH, -T - 1, 10.0)                   # flash LED bore (8 mm)
     for bx, by in BOSS:                                      # M3 insert holes (4.1, blind)
         body -= cyl(2.05, bx, by, 27.0, 8.0)

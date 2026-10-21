@@ -24,8 +24,8 @@ GREY = "#666666"
 LIGHT = "#e8ecf3"
 
 PIR = (24.0, 41.0)
-CAM = (70.0, 41.0)
-FLASH = (51.8, 29.7)
+CAM = (70.0, 54.0)
+FLASH = (81.3, 35.8)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
 MOUNT = [(48, 12), (48, 58)]
 
@@ -94,7 +94,7 @@ ax = fig1.add_axes([0.05, 0.31, 0.44, 0.57])
 ax.set_aspect("equal"); ax.axis("off")
 ax.set_xlim(-18, 112); ax.set_ylim(-17, 88)
 outline(ax)
-for (x, y, r_out, r_bore) in ((*PIR, 17, 12), (*CAM, 10, 6.5)):
+for (x, y, r_out, r_bore) in ((*PIR, 17, 11.5), (*CAM, 10, 4)):
     ax.add_patch(Circle((x, y), r_out, fill=False, lw=1.6, edgecolor=NAVY))
     ax.add_patch(Circle((x, y), r_bore, fill=False, lw=1.6, edgecolor=NAVY))
     centre_mark(ax, x, y, 3.5)
@@ -124,12 +124,13 @@ ax.annotate("", xy=(24, 75), xytext=(70, 75),
             arrowprops=dict(arrowstyle="<->", color=GREY, lw=0.8))
 ax.text(47, 76.5, "46", ha="center", fontsize=7.5, color=NAVY)
 dim_v(ax, 0, 41, -8, "41")
+dim_v(ax, 0, 54, -14, "54")
 leader(ax, (PIR[0] - 12, PIR[1] + 13), (-16, 63),
-       "PIR bezel Ø34, bore Ø24\n(HC-SR501 dome Ø23)")
-leader(ax, (CAM[0] + 10, CAM[1] + 11), (74, 63),
-       "Camera bezel Ø20, bore Ø13\n(lens only)")
-leader(ax, FLASH, (30, 12),
-       "Flash bore Ø8 — LED lands here with the\nboard landscape, antenna end RIGHT")
+       "PIR bezel Ø34, bore Ø23\n(HC-SR501 dome Ø23)")
+leader(ax, (CAM[0] + 10, CAM[1] + 11), (72, 72),
+       "Camera bezel Ø20, bore Ø8\n(lens barrel)")
+leader(ax, FLASH, (74, 58),
+       "Flash bore Ø8 — LED lands here,\nboard upright, antenna UP")
 leader(ax, (12, 6), (38, -13),
        "4× bosses Ø8 (dashed),\nØ4.1 insert holes behind plate")
 
@@ -206,7 +207,7 @@ notes = (
     "• Both STLs are single watertight solids — they open directly\n"
     "  in Bambu Studio (fixed 2026-10-02; the old files were not).\n\n"
     "BEFORE A LONG PRINT\n"
-    "• Test-fit your parts: HC-SR501 dome is Ø23 (bore Ø24); ESP32-CAM\n"
+    "• Test-fit your parts: HC-SR501 dome Ø23 (bore Ø23, snug); ESP32-CAM\n"
     "  boards vary slightly between sellers. Print, check, then commit.\n"
     "• Charging cable reaches the TP4056 through the deep bottom notch.\n"
     "• Press the 4 M3 brass inserts into the bosses (≈200°C iron)\n"
@@ -227,7 +228,7 @@ ax.set_aspect("equal"); ax.axis("off")
 ax.set_xlim(-14, 150); ax.set_ylim(-18, 96)
 ax.text(62, 93, "EXPLODED VIEW (schematic, front → back)", fontsize=9,
         weight="bold", color=NAVY, ha="center")
-ax.text(62, 88.5, "lens faces the Ø13 bore, flash the Ø8 bore · PIR dome faces the Ø24 bore",
+ax.text(62, 88.5, "lens and flash face Ø8 bores · PIR dome faces the Ø23 bore",
         fontsize=7.5, color=NAVY, ha="center")
 
 
@@ -283,9 +284,9 @@ steps = (
     "3. Flash the ESP32-CAM with the FTDI before it goes in.\n"
     "4. Wire the power chain + PIR per the table below;\n"
     "   470 µF across 5V/GND, close to the ESP32-CAM.\n"
-    "5. Seat the PIR dome in the Ø24 bore, ESP32-CAM lens\n"
-    "   in the Ø13 bore (board horizontal, antenna end\n"
-    "   RIGHT — flash LED then meets the Ø8 bore). VHB/hot glue.\n"
+    "5. Seat the PIR dome in the Ø23 bore, ESP32-CAM lens\n"
+    "   in the Ø8 bore (board UPRIGHT, antenna UP, so the\n"
+    "   flash LED meets its Ø8 bore). VHB tape/hot glue.\n"
     "6. Lay the 18650 in the cradle; zip tie up through one\n"
     "   floor slot, over the cell, down the other slot.\n"
     "7. Stand TP4056 + boost upright at the back, along\n"

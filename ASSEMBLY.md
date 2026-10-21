@@ -72,13 +72,13 @@ boost OUT− (GND) → common ground
 
 ## 6. Mount the boards in the body
 
-- **ESP32-CAM:** lens centred in the 13 mm bore, **board long-side
-  horizontal with the antenna end to the RIGHT**. On the board the flash
-  LED sits down and to the left of the lens in this mounting, exactly
-  behind the separate 8 mm flash bore. Fix with ~2 mm foam VHB tape so
-  the lens base clears the bore rim — keep the antenna area (the right
-  end of the board) clear of metal.
-- **PIR:** behind the 24 mm bore with the white Fresnel dome poking into
+- **ESP32-CAM:** lens centred in the 8 mm bore, **board UPRIGHT with
+  the antenna at the TOP**. The flash LED sits below and to the right
+  of the lens in this mounting, exactly behind the separate 8 mm flash
+  bore. The square lens base seats flat against the plate and only the
+  barrel enters the bore, so fix with thin tape or a dab of hot glue —
+  keep the antenna area (the top end of the board) clear of metal.
+- **PIR:** behind the 23 mm bore with the white Fresnel dome poking into
   it; shim with foam tape until the dome tip sits just inside the bore.
   Same fixing method.
 - Board positions and bores were checked against the standard part
