@@ -126,7 +126,7 @@ box("esp_pcb", (27, 40.5, 1.6), (70, 54, 6.8), GREEN, g)
 box("esp_shield", (18, 20, 3), (70, 43.5, 9.1), SHIELD, g)
 box("esp_cam", (12, 12, 4), (70, 54, 9.6), BLACK, g)
 cyl("esp_lens", 4, 2.5, (70, 54, 12.8), GLASS, g)
-box("esp_flash", (3, 2, 1), (58.7, 35.8, 9.0), WHITE, g)
+box("esp_flash", (3, 2, 1), (59.8, 35.1, 9.0), WHITE, g)
 box("esp_c1", (4, 3, 1.5), (62, 30, 8.6), BLACK, g)
 box("esp_c2", (3, 3, 1.5), (80, 62, 8.6), BLACK, g)
 

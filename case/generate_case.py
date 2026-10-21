@@ -11,10 +11,11 @@ Design (all mm):
       * PIR bezel: outer r17, 23 mm bore (Pappy's spec, 2026-10-21 —
         line-to-line with the 23 mm HC-SR501 Fresnel dome, a snug grip)
       * Camera bezel: outer r10, 8 mm bore for the lens barrel, plus a
-        separate 8 mm bore for the flash LED at (58.7, 35.8). The board
+        separate 8 mm bore for the flash LED at (59.8, 35.1). The board
         mounts UPRIGHT, antenna at the TOP, never on its side (Pappy's
         checks against his own board, 2026-10-21): on his board the LED
-        centre sits 11.3 mm LEFT and 18.2 mm below the lens centre.
+        centre sits 10.2 mm LEFT and 18.9 mm below the lens centre
+        (fine-tuned v3.10 from the first printed case).
         The camera sits high on the face (centre y=54) so the upright
         board's bottom end clears the battery bay — at y=41 it would
         foul the cell's shoulder.
@@ -96,6 +97,13 @@ v3.9 (2026-10-21): Pappy corrected the flash side once more, board in
   (81.3, 35.8) -> (58.7, 35.8). Board stays upright, antenna up;
   camera stays at (70, 54).
 
+v3.10 (2026-10-21): first printed case test-fitted. The flash LED sat
+  off-centre in its bore; measured from Pappy's photo of the printed
+  case, the LED centre is 1.1 mm further left and 0.7 mm lower than
+  the stock-photo dimensions put it. Flash bore (58.7, 35.8) ->
+  (59.8, 35.1), i.e. 10.2 LEFT / 18.9 below the lens on his board.
+  Everything else unchanged.
+
 Run with the project venv:
   ../.venv/bin/python generate_case.py
 Outputs: doorbell-cam-body.stl, doorbell-cam-lid.stl (binary STL, mm).
@@ -117,7 +125,7 @@ T, D = 2.5, 34.5                       # front plate thickness, body depth
 PIR = (24.0, 41.0)                     # PIR bezel centre (raised 3 mm for cam clearance)
 CAM = (70.0, 54.0)                     # camera bezel centre (high on the face: the upright
                                        # board's bottom end must clear the battery bay)
-FLASH = (58.7, 35.8)                   # flash LED bore centre: 11.3 LEFT, 18.2 below the
+FLASH = (59.8, 35.1)                   # flash LED bore centre: 10.2 LEFT, 18.9 below the
                                        # lens, board upright, antenna at the top
                                        # (Pappy's own board check, 2026-10-21)
 BOSS = [(8, 8), (88, 8), (8, 62), (88, 62)]
