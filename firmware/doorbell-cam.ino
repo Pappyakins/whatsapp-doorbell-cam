@@ -12,13 +12,22 @@
 // Setup app: settings can also be written over Bluetooth by the
 // JakinsCraft ESP Setup app (see PROVISIONING.md). Values stored by the
 // app live in NVS flash and OVERRIDE config.h; config.h stays as the
-// first-flash fallback. Provisioning starts on EVERY manual power-on:
-// the BLE setup window (2 minutes, flash blinking) opens first, and if
-// nobody saves new settings in that time the cam carries on with its
-// normal boot photo and send. It never opens on a PIR wake, so field
-// battery use is unaffected. (Pappy's call, 2026-10-21: entering setup
-// must not depend on Wi-Fi failing. A physical setup button comes
-// later and will trigger the same window.)
+// first-flash fallback. Provisioning starts on EVERY manual power-on
+// unless the setup is locked (see below): the BLE setup window
+// (2 minutes, flash blinking) opens first, and if nobody saves new
+// settings in that time the cam carries on with its normal boot photo
+// and send. It never opens on a PIR wake, so field battery use is
+// unaffected. (Pappy's call, 2026-10-21: entering setup must not
+// depend on Wi-Fi failing.)
+//
+// Lock: the setup app can write LOCK to the control characteristic
+// instead of APPLY. That saves the settings AND sets a "locked" flag
+// in NVS. On later power-on boots a locked cam skips the setup window
+// entirely and goes straight to the boot photo, so it stops asking for
+// details every boot. A physical setup button on GPIO 14 (to GND,
+// active LOW, INPUT_PULLUP) is the way back in: hold it while powering
+// on and the cam clears the lock and opens setup as normal. ERASE also
+// clears the lock.
 //
 // BLE uses the NimBLE-Arduino library (by h2zero, install it in the
 // Arduino Library Manager) instead of the built in Bluedroid stack.
@@ -71,6 +80,7 @@
 
 #define PIR_GPIO          13          // HC-SR501 OUT -> GPIO13
 #define FLASH_GPIO         4          // on-board flash LED
+#define SETUP_BTN_GPIO     14          // setup button -> GND, active LOW (unlock path)
 #define WIFI_TIMEOUT_MS   12000
 
 // ---- effective config: config.h defaults, NVS (app-written) wins ----
@@ -81,6 +91,7 @@ static String cfgToken  = DEVICE_TOKEN;
 static String cfgName   = CAMERA_NAME;
 static String cfgTo     = NOTIFY_TO;
 static bool   g_powerOn = false;   // true when this boot is a manual power-on
+static bool   cfgLocked = false;   // NVS "locked": skip setup on power-on boots
 
 static void load_config() {
   Preferences p;
@@ -91,6 +102,7 @@ static void load_config() {
     cfgToken  = p.getString("token",  cfgToken);
     cfgName   = p.getString("name",   cfgName);
     cfgTo     = p.getString("to",     cfgTo);
+    cfgLocked = p.getBool("locked", false);
     p.end();
   }
   Serial.print("config: ssid=");
@@ -108,9 +120,11 @@ static void go_to_sleep() {
 
 // ---- BLE provisioning (JakinsCraft ESP Setup app, see PROVISIONING.md) ----
 // One writable characteristic per field; write "APPLY" to the control
-// characteristic to save everything to NVS and restart, "ERASE" to wipe
-// the stored settings and restart. Read the control characteristic for
-// status: "ready", "saved" or "erased".
+// characteristic to save everything to NVS and restart, "LOCK" to save
+// everything AND set the locked flag (later power-on boots skip setup),
+// "ERASE" to wipe the stored settings (including the lock) and restart.
+// Read the control characteristic for status: "ready", "saved", "locked"
+// or "erased".
 #define PROV_SERVICE_UUID  "8d4f0001-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_SSID_UUID     "8d4f0002-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_PASS_UUID     "8d4f0003-3c2a-4b5e-9f1a-2b3c4d5e6f70"
@@ -134,26 +148,38 @@ public:
 
 class ProvControlCallbacks : public NimBLECharacteristicCallbacks {
 public:
+  // Save all pending fields to NVS. Blank password keeps the stored
+  // one. When lock is true, also set the locked flag: later power-on
+  // boots skip the setup window until the setup button clears it.
+  void save_pending(bool lock) {
+    Preferences p;
+    if (p.begin("doorcfg", false)) {
+      if (pendSsid.length())   p.putString("ssid", pendSsid);
+      if (pendPass.length())   p.putString("pass", pendPass);
+      if (pendServer.length()) p.putString("server", pendServer);
+      if (pendToken.length())  p.putString("token", pendToken);
+      p.putString("name", pendName);   // may be blanked on purpose
+      p.putString("to", pendTo);
+      if (lock) p.putBool("locked", true);
+      p.end();
+    }
+  }
   void onWrite(NimBLECharacteristic *c, NimBLEConnInfo &) override {
     String cmd = c->getValue().c_str();
     cmd.trim();
     if (cmd == "APPLY") {
-      Preferences p;
-      if (p.begin("doorcfg", false)) {
-        if (pendSsid.length())   p.putString("ssid", pendSsid);
-        if (pendPass.length())   p.putString("pass", pendPass);
-        if (pendServer.length()) p.putString("server", pendServer);
-        if (pendToken.length())  p.putString("token", pendToken);
-        p.putString("name", pendName);   // may be blanked on purpose
-        p.putString("to", pendTo);
-        p.end();
-      }
+      save_pending(false);
       provControl->setValue("saved");
       Serial.println("provisioning: saved, restarting");
       provDone = true;
+    } else if (cmd == "LOCK") {
+      save_pending(true);
+      provControl->setValue("locked");
+      Serial.println("provisioning: locked, restarting");
+      provDone = true;
     } else if (cmd == "ERASE") {
       Preferences p;
-      if (p.begin("doorcfg", false)) { p.clear(); p.end(); }
+      if (p.begin("doorcfg", false)) { p.clear(); p.end(); }  // clears "locked" too
       provControl->setValue("erased");
       Serial.println("provisioning: erased, restarting");
       provDone = true;
@@ -386,11 +412,27 @@ void setup() {
   }
 
   if (g_powerOn) {
-    // Manual power-on: always open the BLE setup window first. If the
-    // app saves or erases settings the cam restarts inside
+    // Manual power-on: open the BLE setup window first, UNLESS the
+    // setup is locked. A locked cam skips setup entirely and goes
+    // straight to the boot photo below. Holding the setup button
+    // (GPIO 14 to GND) while powering on clears the lock and opens
+    // setup as normal; release it once the flash starts blinking.
+    // If the app saves or erases settings the cam restarts inside
     // run_provisioning(); if the window times out untouched we fall
     // through to the normal boot photo + send below.
-    run_provisioning();
+    pinMode(SETUP_BTN_GPIO, INPUT_PULLUP);
+    bool btnHeld = (digitalRead(SETUP_BTN_GPIO) == LOW);
+    if (cfgLocked && btnHeld) {
+      Preferences p;
+      if (p.begin("doorcfg", false)) { p.putBool("locked", false); p.end(); }
+      cfgLocked = false;
+      Serial.println("provisioning: setup button held, lock cleared");
+      run_provisioning();
+    } else if (cfgLocked) {
+      Serial.println("provisioning: locked, skipping setup window");
+    } else {
+      run_provisioning();
+    }
   }
 
   if (!init_camera()) {
@@ -420,7 +462,7 @@ void setup() {
     digitalWrite(FLASH_GPIO, LOW);
   }
   // A failed send just sleeps now: setup mode already ran at boot on
-  // manual power-ons, and PIR wakes never offer it.
+  // manual power-ons that are not locked, and PIR wakes never offer it.
   go_to_sleep();
 }
 

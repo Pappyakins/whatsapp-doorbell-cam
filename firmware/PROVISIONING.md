@@ -18,17 +18,37 @@ stored in the NVS namespace `doorcfg` and override `config.h`.
 ## When the camera listens
 
 Provisioning starts on EVERY manual power-on boot (never on a PIR
-wake). The setup window opens first, before the boot photo: it
-advertises for 2 minutes, blinking the flash LED once a second. If
-the app saves or erases settings, the camera restarts immediately
-onto the new settings. If nobody connects in the 2 minutes, the cam
-carries on with its normal boot photo and send, then sleeps.
+wake), UNLESS the setup is locked (see below). The setup window
+opens first, before the boot photo: it advertises for 2 minutes,
+blinking the flash LED once a second. If the app saves or erases
+settings, the camera restarts immediately onto the new settings. If
+nobody connects in the 2 minutes, the cam carries on with its normal
+boot photo and send, then sleeps.
 
 Changed 2026-10-21 at Pappy's direction: entering setup must not
 depend on Wi-Fi failing (the old rule also capped attempts at 2,
 which made a working camera nearly impossible to reconfigure away
-from home). A physical setup button is planned as a later addition
-and will trigger this same window.
+from home).
+
+## Locking the setup
+
+The app can write `LOCK` to the control characteristic instead of
+`APPLY`. That saves the settings AND sets a `locked` flag in NVS.
+On later power-on boots a locked cam skips the setup window entirely
+and goes straight to the boot photo, so it stops asking for details
+every boot. `ERASE` wipes the whole `doorcfg` namespace, lock
+included, so an erased cam is unlocked again.
+
+## Setup button (the way back in)
+
+A locked cam never advertises, so the app cannot reach it to unlock
+it. The way back in is a physical button: one side to GPIO 14, the
+other side to GND. The firmware configures GPIO 14 as INPUT_PULLUP
+and samples it at power-on, so the button is active LOW. Hold the
+button while powering the cam on and keep holding it until the flash
+starts blinking: the cam clears the lock and opens the setup window
+as normal. If the button is not held, a locked cam boots straight
+to its photo. The button does nothing on a PIR wake.
 
 ## Device identity
 
@@ -46,7 +66,7 @@ and will trigger this same window.
 | `8d4f0005-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Receiver WhatsApp | read/write | Digits with country code; blank = server default. The server only honors numbers on its allowlist |
 | `8d4f0006-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Server URL | read/write | Pre-filled |
 | `8d4f0007-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Device token | read/write | Pre-filled |
-| `8d4f0008-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Control / status | read/write | Write `APPLY` to save + restart, `ERASE` to wipe + restart. Read returns `ready`, `saved`, or `erased` |
+| `8d4f0008-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Control / status | read/write | Write `APPLY` to save + restart, `LOCK` to save + lock + restart, `ERASE` to wipe + restart. Read returns `ready`, `saved`, `locked`, or `erased` |
 
 All values are plain UTF-8 strings, no terminator. Writes are single
 characteristic writes; keep each value under 200 bytes.
@@ -59,5 +79,8 @@ characteristic writes; keep each value under 200 bytes.
    leave it blank to keep the stored one).
 4. Write `APPLY` to the control characteristic, then read it back:
    `saved` means the camera stored the settings and is restarting.
+   Write `LOCK` instead and the camera also sets its locked flag:
+   read back `locked`, and later power-on boots skip setup entirely
+   until the setup button (GPIO 14 to GND) is held at power-on.
 5. Success on the camera side looks like the usual "doorbell online"
    photo arriving on WhatsApp once it joins the new Wi-Fi.
