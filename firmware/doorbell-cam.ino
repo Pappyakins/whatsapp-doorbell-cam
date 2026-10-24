@@ -13,7 +13,7 @@
 // JakinsCraft ESP Setup app (see PROVISIONING.md). Values stored by the
 // app live in NVS flash and OVERRIDE config.h; config.h stays as the
 // first-flash fallback. Provisioning starts on EVERY manual power-on:
-// the BLE setup window (5 minutes, flash blinking) opens first, and if
+// the BLE setup window (2 minutes, flash blinking) opens first, and if
 // nobody saves new settings in that time the cam carries on with its
 // normal boot photo and send. It never opens on a PIR wake, so field
 // battery use is unaffected. (Pappy's call, 2026-10-21: entering setup
@@ -119,7 +119,7 @@ static void go_to_sleep() {
 #define PROV_SERVER_UUID   "8d4f0006-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_TOKEN_UUID    "8d4f0007-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_CONTROL_UUID  "8d4f0008-3c2a-4b5e-9f1a-2b3c4d5e6f70"
-#define PROV_WINDOW_MS     300000    // 5 minutes, then carry on as normal
+#define PROV_WINDOW_MS     120000    // 2 minutes, then carry on as normal
 
 static String pendSsid, pendPass, pendName, pendTo, pendServer, pendToken;
 static NimBLECharacteristic *provControl = nullptr;

@@ -19,9 +19,9 @@ stored in the NVS namespace `doorcfg` and override `config.h`.
 
 Provisioning starts on EVERY manual power-on boot (never on a PIR
 wake). The setup window opens first, before the boot photo: it
-advertises for 5 minutes, blinking the flash LED once a second. If
+advertises for 2 minutes, blinking the flash LED once a second. If
 the app saves or erases settings, the camera restarts immediately
-onto the new settings. If nobody connects in the 5 minutes, the cam
+onto the new settings. If nobody connects in the 2 minutes, the cam
 carries on with its normal boot photo and send, then sleeps.
 
 Changed 2026-10-21 at Pappy's direction: entering setup must not
