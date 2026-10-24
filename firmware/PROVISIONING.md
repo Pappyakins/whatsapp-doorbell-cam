@@ -39,16 +39,25 @@ and goes straight to the boot photo, so it stops asking for details
 every boot. `ERASE` wipes the whole `doorcfg` namespace, lock
 included, so an erased cam is unlocked again.
 
+The flag only changes through the app's lock slider: `LOCK` sets it,
+`UNLOCK` clears it without restarting the cam. If the setup window
+times out with no action, the flag stays exactly as it was. A
+dedicated read-only characteristic reports the flag (`locked` /
+`unlocked`) so the app can position its slider on connect: slider on
+means locked, slider off means unlocked.
+
 ## Setup button (the way back in)
 
-A locked cam never advertises, so the app cannot reach it to unlock
-it. The way back in is a physical button: one side to GPIO 14, the
-other side to GND. The firmware configures GPIO 14 as INPUT_PULLUP
-and samples it at power-on, so the button is active LOW. Hold the
-button while powering the cam on and keep holding it until the flash
-starts blinking: the cam clears the lock and opens the setup window
-as normal. If the button is not held, a locked cam boots straight
-to its photo. The button does nothing on a PIR wake.
+A locked cam never advertises, so the app cannot reach it on an
+ordinary boot. The way back in is a physical button: one side to
+GPIO 14, the other side to GND. The firmware configures GPIO 14 as
+INPUT_PULLUP and samples it at power-on, so the button is active LOW.
+Hold the button while powering the cam on and keep holding it until
+the flash starts blinking: the cam opens the setup window as normal.
+Holding the button does NOT clear the lock, so after that session the
+cam is still locked until the slider is moved to off. If the button
+is not held, a locked cam boots straight to its photo. The button
+does nothing on a PIR wake.
 
 ## Device identity
 
@@ -66,7 +75,8 @@ to its photo. The button does nothing on a PIR wake.
 | `8d4f0005-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Receiver WhatsApp | read/write | Digits with country code; blank = server default. The server only honors numbers on its allowlist |
 | `8d4f0006-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Server URL | read/write | Pre-filled |
 | `8d4f0007-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Device token | read/write | Pre-filled |
-| `8d4f0008-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Control / status | read/write | Write `APPLY` to save + restart, `LOCK` to save + lock + restart, `ERASE` to wipe + restart. Read returns `ready`, `saved`, `locked`, or `erased` |
+| `8d4f0008-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Control / status | read/write | Write `APPLY` to save + restart, `LOCK` to save + lock + restart, `UNLOCK` to clear the lock (no restart), `ERASE` to wipe + restart. Read returns `ready`, `saved`, `locked`, `unlocked`, or `erased` |
+| `8d4f0009-3c2a-4b5e-9f1a-2b3c4d5e6f70` | Lock state | read | Returns `locked` or `unlocked`; the app positions its lock slider from this on connect |
 
 All values are plain UTF-8 strings, no terminator. Writes are single
 characteristic writes; keep each value under 200 bytes.
@@ -74,7 +84,8 @@ characteristic writes; keep each value under 200 bytes.
 ## App flow
 
 1. Scan for the service UUID, connect to the `JakinsCam-XXXX` device.
-2. Read SSID, name, receiver, server, token to pre-fill the form.
+2. Read SSID, name, receiver, server, token to pre-fill the form, and
+   read the lock state to position the lock slider (on = locked).
 3. Let the user edit, then write back every field (password too;
    leave it blank to keep the stored one).
 4. Write `APPLY` to the control characteristic, then read it back:
@@ -82,5 +93,7 @@ characteristic writes; keep each value under 200 bytes.
    Write `LOCK` instead and the camera also sets its locked flag:
    read back `locked`, and later power-on boots skip setup entirely
    until the setup button (GPIO 14 to GND) is held at power-on.
+   Write `UNLOCK` to clear the flag without restarting; read back
+   `unlocked`.
 5. Success on the camera side looks like the usual "doorbell online"
    photo arriving on WhatsApp once it joins the new Wi-Fi.

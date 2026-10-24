@@ -24,10 +24,14 @@
 // instead of APPLY. That saves the settings AND sets a "locked" flag
 // in NVS. On later power-on boots a locked cam skips the setup window
 // entirely and goes straight to the boot photo, so it stops asking for
-// details every boot. A physical setup button on GPIO 14 (to GND,
-// active LOW, INPUT_PULLUP) is the way back in: hold it while powering
-// on and the cam clears the lock and opens setup as normal. ERASE also
-// clears the lock.
+// details every boot. The app reads the lock state from a dedicated
+// characteristic and shows it on the lock slider. The flag only changes
+// via the slider: LOCK sets it, UNLOCK clears it (without restarting).
+// A physical setup button on GPIO 14 (to GND, active LOW, INPUT_PULLUP)
+// reopens setup on a locked cam: hold it while powering on and the cam
+// opens the window as normal, but the lock stays set. ERASE also
+// clears the lock. If the window times out untouched, the flag stays
+// exactly as it was.
 //
 // BLE uses the NimBLE-Arduino library (by h2zero, install it in the
 // Arduino Library Manager) instead of the built in Bluedroid stack.
@@ -121,10 +125,13 @@ static void go_to_sleep() {
 // ---- BLE provisioning (JakinsCraft ESP Setup app, see PROVISIONING.md) ----
 // One writable characteristic per field; write "APPLY" to the control
 // characteristic to save everything to NVS and restart, "LOCK" to save
-// everything AND set the locked flag (later power-on boots skip setup),
+// everything AND set the locked flag (later power-on boots skip setup)
+// and restart, "UNLOCK" to clear the locked flag (no restart),
 // "ERASE" to wipe the stored settings (including the lock) and restart.
-// Read the control characteristic for status: "ready", "saved", "locked"
-// or "erased".
+// Read the control characteristic for status: "ready", "saved", "locked",
+// "unlocked" or "erased". A separate read-only characteristic reports
+// the lock state ("locked" / "unlocked") so the app can position its
+// lock slider on connect.
 #define PROV_SERVICE_UUID  "8d4f0001-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_SSID_UUID     "8d4f0002-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_PASS_UUID     "8d4f0003-3c2a-4b5e-9f1a-2b3c4d5e6f70"
@@ -133,10 +140,12 @@ static void go_to_sleep() {
 #define PROV_SERVER_UUID   "8d4f0006-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_TOKEN_UUID    "8d4f0007-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_CONTROL_UUID  "8d4f0008-3c2a-4b5e-9f1a-2b3c4d5e6f70"
+#define PROV_LOCKSTATE_UUID "8d4f0009-3c2a-4b5e-9f1a-2b3c4d5e6f70"
 #define PROV_WINDOW_MS     120000    // 2 minutes, then carry on as normal
 
 static String pendSsid, pendPass, pendName, pendTo, pendServer, pendToken;
 static NimBLECharacteristic *provControl = nullptr;
+static NimBLECharacteristic *provLockState = nullptr;
 static volatile bool provDone = false;
 
 class ProvFieldCallbacks : public NimBLECharacteristicCallbacks {
@@ -174,9 +183,20 @@ public:
       provDone = true;
     } else if (cmd == "LOCK") {
       save_pending(true);
+      if (provLockState) provLockState->setValue("locked");
       provControl->setValue("locked");
       Serial.println("provisioning: locked, restarting");
       provDone = true;
+    } else if (cmd == "UNLOCK") {
+      // Clear the flag only; do NOT restart, so the window keeps
+      // running and the flag takes effect on later boots. A timeout
+      // with no action leaves the flag exactly as it was.
+      Preferences p;
+      if (p.begin("doorcfg", false)) { p.putBool("locked", false); p.end(); }
+      cfgLocked = false;
+      if (provLockState) provLockState->setValue("unlocked");
+      provControl->setValue("unlocked");
+      Serial.println("provisioning: unlocked, staying in setup");
     } else if (cmd == "ERASE") {
       Preferences p;
       if (p.begin("doorcfg", false)) { p.clear(); p.end(); }  // clears "locked" too
@@ -198,8 +218,9 @@ static NimBLECharacteristic *prov_field(NimBLEService *svc, const char *uuid,
 }
 
 // Run BLE setup mode for up to PROV_WINDOW_MS. Restarts the cam itself
-// when settings were applied/erased; returns on window timeout and the
-// caller carries on with the normal boot flow.
+// when settings were applied, locked or erased; returns on window
+// timeout and the caller carries on with the normal boot flow. A
+// timeout leaves the locked flag exactly as it was.
 static void run_provisioning() {
   Serial.println("provisioning: BLE setup mode");
   WiFi.disconnect(true);
@@ -233,6 +254,10 @@ static void run_provisioning() {
       PROV_CONTROL_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
   provControl->setValue("ready");
   provControl->setCallbacks(new ProvControlCallbacks());
+  // Read-only lock state, so the app can position its slider on connect.
+  provLockState = svc->createCharacteristic(
+      PROV_LOCKSTATE_UUID, NIMBLE_PROPERTY::READ);
+  provLockState->setValue(cfgLocked ? "locked" : "unlocked");
   NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
   adv->setName(advName.c_str());
   adv->addServiceUUID(PROV_SERVICE_UUID);
@@ -415,22 +440,19 @@ void setup() {
     // Manual power-on: open the BLE setup window first, UNLESS the
     // setup is locked. A locked cam skips setup entirely and goes
     // straight to the boot photo below. Holding the setup button
-    // (GPIO 14 to GND) while powering on clears the lock and opens
-    // setup as normal; release it once the flash starts blinking.
-    // If the app saves or erases settings the cam restarts inside
-    // run_provisioning(); if the window times out untouched we fall
-    // through to the normal boot photo + send below.
+    // (GPIO 14 to GND) while powering on reopens setup even when
+    // locked, but does NOT clear the lock: the flag only changes via
+    // the app's lock slider (LOCK / UNLOCK). If the window times out
+    // untouched the flag stays exactly as it was. If the app saves or
+    // locks, the cam restarts inside run_provisioning(); if the window
+    // times out untouched we fall through to the normal boot photo +
+    // send below.
     pinMode(SETUP_BTN_GPIO, INPUT_PULLUP);
     bool btnHeld = (digitalRead(SETUP_BTN_GPIO) == LOW);
-    if (cfgLocked && btnHeld) {
-      Preferences p;
-      if (p.begin("doorcfg", false)) { p.putBool("locked", false); p.end(); }
-      cfgLocked = false;
-      Serial.println("provisioning: setup button held, lock cleared");
-      run_provisioning();
-    } else if (cfgLocked) {
+    if (cfgLocked && !btnHeld) {
       Serial.println("provisioning: locked, skipping setup window");
     } else {
+      if (cfgLocked) Serial.println("provisioning: setup button held, opening setup (lock kept)");
       run_provisioning();
     }
   }
